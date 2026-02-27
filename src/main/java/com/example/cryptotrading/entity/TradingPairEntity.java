@@ -28,24 +28,16 @@ public class TradingPairEntity extends BaseEntity {
     @Column(nullable = false, unique = true, length = 10)
     private String symbol;
 
-    @Column(name = "base_currency_id", nullable = false)
-    private Long baseCurrencyId;
-
-    @Column(name = "quote_currency_id", nullable = false)
-    private Long quoteCurrencyId;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "base_currency_id")
+    @JoinColumn(name = "base_currency_id", nullable = false)
     private CurrencyEntity baseCurrency;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "quote_currency_id")
+    @JoinColumn(name = "quote_currency_id", nullable = false)
     private CurrencyEntity quoteCurrency;
 
-    public TradingPairEntity(Long id, String symbol, Long baseCurrencyId, Long quoteCurrencyId) {
+    public TradingPairEntity(Long id, String symbol) {
         this.id = id;
         this.symbol = symbol;
-        this.baseCurrencyId = baseCurrencyId;
-        this.quoteCurrencyId = quoteCurrencyId;
     }
 }

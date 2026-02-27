@@ -34,12 +34,6 @@ public class TradeEntity extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "trading_pair_id", nullable = false)
-    private Long tradingPairId;
-
-    @Column(name = "order_side_id", nullable = false)
-    private Long orderSideId;
-
     @Column(nullable = false, precision = 30, scale = 8)
     private BigDecimal price;
 
@@ -50,22 +44,18 @@ public class TradeEntity extends BaseEntity {
     private BigDecimal cost;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private UserEntity user;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "trading_pair_id")
+    @JoinColumn(name = "trading_pair_id", nullable = false)
     private TradingPairEntity tradingPair;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_side_id")
+    @JoinColumn(name = "order_side_id", nullable = false)
     private OrderSideEntity orderSide;
 
-    public TradeEntity(Long userId, Long tradingPairId, Long orderSideId,
+    public TradeEntity(Long userId, TradingPairEntity tradingPair, OrderSideEntity orderSide,
                        BigDecimal price, BigDecimal quantity, BigDecimal cost) {
         this.userId = userId;
-        this.tradingPairId = tradingPairId;
-        this.orderSideId = orderSideId;
+        this.tradingPair = tradingPair;
+        this.orderSide = orderSide;
         this.price = price;
         this.quantity = quantity;
         this.cost = cost;

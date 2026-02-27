@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.Optional;
 
@@ -66,7 +67,7 @@ class PriceServiceTest {
 
         when(binanceClient.getBookTickers(ALL_SYMBOLS)).thenReturn(binance);
         when(huobiClient.getBookTickers(ALL_SYMBOLS)).thenReturn(huobi);
-        when(priceRepository.findByTradingPairId(any())).thenReturn(Optional.empty());
+        when(priceRepository.findByTradingPair(any())).thenReturn(Optional.empty());
         when(priceRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         priceService.aggregatePrices();
@@ -77,14 +78,14 @@ class PriceServiceTest {
         var savedPrices = captor.getAllValues();
 
         AggregatedPriceEntity btc = savedPrices.stream()
-                .filter(p -> p.getTradingPairId().equals(BTCUSDT_PAIR_ID)).findFirst().orElseThrow();
+                .filter(p -> p.getTradingPair().getId().equals(BTCUSDT_PAIR_ID)).findFirst().orElseThrow();
         assertEquals(new BigDecimal("50050"), btc.getBidPrice());
         assertEquals(HUOBI, btc.getBidExchange());
         assertEquals(new BigDecimal("50080"), btc.getAskPrice());
         assertEquals(HUOBI, btc.getAskExchange());
 
         AggregatedPriceEntity eth = savedPrices.stream()
-                .filter(p -> p.getTradingPairId().equals(ETHUSDT_PAIR_ID)).findFirst().orElseThrow();
+                .filter(p -> p.getTradingPair().getId().equals(ETHUSDT_PAIR_ID)).findFirst().orElseThrow();
         assertEquals(new BigDecimal("3000"), eth.getBidPrice());
         assertEquals(BINANCE, eth.getBidExchange());
         assertEquals(new BigDecimal("3005"), eth.getAskPrice());
@@ -99,7 +100,7 @@ class PriceServiceTest {
 
         when(binanceClient.getBookTickers(ALL_SYMBOLS)).thenReturn(binance);
         when(huobiClient.getBookTickers(ALL_SYMBOLS)).thenReturn(Collections.emptyMap());
-        when(priceRepository.findByTradingPairId(BTCUSDT_PAIR_ID)).thenReturn(Optional.empty());
+        when(priceRepository.findByTradingPair(any())).thenReturn(Optional.empty());
         when(priceRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         priceService.aggregatePrices();
@@ -108,11 +109,40 @@ class PriceServiceTest {
         verify(priceRepository).save(captor.capture());
 
         AggregatedPriceEntity saved = captor.getValue();
-        assertEquals(BTCUSDT_PAIR_ID, saved.getTradingPairId());
+        assertEquals(BTCUSDT_PAIR_ID, saved.getTradingPair().getId());
         assertEquals(BTC_BID, saved.getBidPrice());
         assertEquals(BTC_ASK, saved.getAskPrice());
         assertEquals(BINANCE, saved.getBidExchange());
         assertEquals(BINANCE, saved.getAskExchange());
+    }
+
+    @Test
+    void aggregatePrices_comparesWithStoredPrice_andKeepsBest() {
+        mockActivePairs(btcusdtPairRef());
+
+        // Binance: bid 50000, ask 50100; Huobi: bid 50050, ask 50080
+        // Without DB: best bid=50050 (Huobi), best ask=50080 (Huobi)
+        Map<String, BookTicker> binance = Map.of(
+                BTCUSDT, new BookTicker(new BigDecimal("50000"), new BigDecimal("50100"))
+        );
+        Map<String, BookTicker> huobi = Map.of(
+                BTCUSDT, new BookTicker(new BigDecimal("50050"), new BigDecimal("50080"))
+        );
+
+        // Stored price has better bid (50100) and better ask (49990) than both exchanges
+        AggregatedPriceEntity storedPrice = new AggregatedPriceEntity(
+                btcusdtPairRef(),
+                new BigDecimal("50100"), new BigDecimal("49990"),
+                BINANCE, HUOBI);
+
+        when(binanceClient.getBookTickers(Set.of(BTCUSDT))).thenReturn(binance);
+        when(huobiClient.getBookTickers(Set.of(BTCUSDT))).thenReturn(huobi);
+        when(priceRepository.findByTradingPair(any())).thenReturn(Optional.of(storedPrice));
+
+        priceService.aggregatePrices();
+
+        // Stored price is already best; service should skip unnecessary DB save
+        verify(priceRepository, never()).save(any());
     }
 
     @Test

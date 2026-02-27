@@ -33,26 +33,15 @@ public class WalletEntity extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
-
-    @Column(name = "currency_id", nullable = false)
-    private Long currencyId;
-
     @Column(nullable = false, precision = 30, scale = 8)
     private BigDecimal balance;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "currency_id")
+    @JoinColumn(name = "currency_id", nullable = false)
     private CurrencyEntity currency;
 
-    public WalletEntity(Long userId, Long currencyId, BigDecimal balance) {
-        this.userId = userId;
-        this.currencyId = currencyId;
-        this.balance = balance;
-    }
 }

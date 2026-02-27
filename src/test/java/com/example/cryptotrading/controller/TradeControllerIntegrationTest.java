@@ -2,6 +2,7 @@ package com.example.cryptotrading.controller;
 
 import com.example.cryptotrading.entity.AggregatedPriceEntity;
 import com.example.cryptotrading.repository.AggregatedPriceRepository;
+import com.example.cryptotrading.repository.TradingPairRepository;
 import com.example.cryptotrading.repository.TradeRepository;
 import com.example.cryptotrading.repository.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +35,8 @@ class TradeControllerIntegrationTest {
     private AggregatedPriceRepository priceRepository;
 
     @Autowired
+    private TradingPairRepository tradingPairRepository;
+    @Autowired
     private TradeRepository tradeRepository;
 
     @Autowired
@@ -48,14 +51,15 @@ class TradeControllerIntegrationTest {
         resetWalletBalance(BTC, new BigDecimal("0.00000000"));
         resetWalletBalance(ETH, new BigDecimal("0.00000000"));
 
-        priceRepository.save(new AggregatedPriceEntity(
-                BTCUSDT_PAIR_ID, BTC_BID, BTC_ASK, BINANCE, HUOBI));
-        priceRepository.save(new AggregatedPriceEntity(
-                ETHUSDT_PAIR_ID, ETH_BID, ETH_ASK, HUOBI, BINANCE));
+        var btcPair = tradingPairRepository.findById(BTCUSDT_PAIR_ID).orElseThrow();
+        var ethPair = tradingPairRepository.findById(ETHUSDT_PAIR_ID).orElseThrow();
+
+        priceRepository.save(new AggregatedPriceEntity(btcPair, BTC_BID, BTC_ASK, BINANCE, HUOBI));
+        priceRepository.save(new AggregatedPriceEntity(ethPair, ETH_BID, ETH_ASK, HUOBI, BINANCE));
     }
 
     private void resetWalletBalance(String currencyCode, BigDecimal balance) {
-        walletRepository.findByUserIdAndCurrency_Code(DEFAULT_USER_ID, currencyCode).ifPresent(wallet -> {
+        walletRepository.findByUserIdAndCurrencyCode(DEFAULT_USER_ID, currencyCode).ifPresent(wallet -> {
             wallet.setBalance(balance);
             walletRepository.save(wallet);
         });
