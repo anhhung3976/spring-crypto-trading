@@ -4,6 +4,7 @@ import com.example.cryptotrading.dto.TradeRequestDto;
 import com.example.cryptotrading.dto.TradeResponseDto;
 import com.example.cryptotrading.service.TradeService;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,16 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
+@AllArgsConstructor
 @RequestMapping("/api/trades")
 public class TradeController {
 
     private static final Long DEFAULT_USER_ID = 1L;
 
     private final TradeService tradeService;
-
-    public TradeController(TradeService tradeService) {
-        this.tradeService = tradeService;
-    }
 
     @PostMapping
     public ResponseEntity<TradeResponseDto> executeTrade(@Valid @RequestBody TradeRequestDto request) {

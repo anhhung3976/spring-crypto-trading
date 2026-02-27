@@ -8,11 +8,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 @Component
+@AllArgsConstructor
 @Slf4j
 public class HuobiClient {
 
@@ -20,10 +22,6 @@ public class HuobiClient {
     private static final Set<String> SUPPORTED_SYMBOLS = Set.of("btcusdt", "ethusdt");
 
     private final RestTemplate restTemplate;
-
-    public HuobiClient(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
 
     public Map<String, BinanceClient.BookTicker> getBookTickers() {
         try {

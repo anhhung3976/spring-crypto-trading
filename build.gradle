@@ -30,6 +30,12 @@ allprojects {
         apply plugin: 'io.spring.dependency-management'
 
         dependencyManagement {
+            /**
+             * this config prevent sub project’s dependencies to override its dependency management
+             * remove this or set = true if you want to override
+             */
+            overriddenByDependencies = false
+
             imports {
                 mavenBom(SpringBootPlugin.BOM_COORDINATES)
             }

@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 @Component
+@AllArgsConstructor
 @Slf4j
 public class BinanceClient {
 
@@ -22,10 +24,6 @@ public class BinanceClient {
     private static final Set<String> SUPPORTED_SYMBOLS = Set.of("BTCUSDT", "ETHUSDT");
 
     private final RestTemplate restTemplate;
-
-    public BinanceClient(RestTemplate restTemplate) {
-        this.restTemplate = restTemplate;
-    }
 
     public Map<String, BookTicker> getBookTickers() {
         try {
