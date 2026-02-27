@@ -1,7 +1,7 @@
 package com.example.cryptotrading.controller;
 
-import com.example.cryptotrading.dto.TradeRequest;
-import com.example.cryptotrading.dto.TradeResponse;
+import com.example.cryptotrading.dto.TradeRequestDto;
+import com.example.cryptotrading.dto.TradeResponseDto;
 import com.example.cryptotrading.service.TradeService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -27,14 +27,13 @@ public class TradeController {
     }
 
     @PostMapping
-    public ResponseEntity<TradeResponse> executeTrade(@Valid @RequestBody TradeRequest request) {
-        TradeResponse response = tradeService.executeTrade(DEFAULT_USER_ID, request);
+    public ResponseEntity<TradeResponseDto> executeTrade(@Valid @RequestBody TradeRequestDto request) {
+        TradeResponseDto response = tradeService.executeTrade(DEFAULT_USER_ID, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
-    public List<TradeResponse> getTradeHistory() {
-        List<TradeResponse> history = tradeService.getTradeHistory(DEFAULT_USER_ID);
-        return history;
+    public List<TradeResponseDto> getTradeHistory() {
+        return tradeService.getTradeHistory(DEFAULT_USER_ID);
     }
 }

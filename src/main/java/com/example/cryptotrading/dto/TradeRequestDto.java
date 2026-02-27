@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 
-public record TradeRequest(
+public record TradeRequestDto(
         @NotBlank(message = "Symbol is required")
         String symbol,
 
@@ -18,3 +18,4 @@ public record TradeRequest(
         BigDecimal quantity
 ) {
 }
+

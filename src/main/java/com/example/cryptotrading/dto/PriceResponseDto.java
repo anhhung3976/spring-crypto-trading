@@ -3,7 +3,7 @@ package com.example.cryptotrading.dto;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record PriceResponse(
+public record PriceResponseDto(
         String symbol,
         BigDecimal bidPrice,
         BigDecimal askPrice,
@@ -12,3 +12,4 @@ public record PriceResponse(
         LocalDateTime updatedAt
 ) {
 }
+
