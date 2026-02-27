@@ -2,7 +2,7 @@ package com.example.cryptotrading.service;
 
 import com.example.cryptotrading.dto.TradeRequest;
 import com.example.cryptotrading.dto.TradeResponse;
-import com.example.cryptotrading.entity.AggregatedPrice;
+import com.example.cryptotrading.entity.AggregatedPriceEntity;
 import com.example.cryptotrading.exception.InsufficientBalanceException;
 import com.example.cryptotrading.exception.PriceUnavailableException;
 import com.example.cryptotrading.repository.TradeRepository;
@@ -44,7 +44,7 @@ class TradeServiceTest {
 
     @Test
     void executeBuyTrade_success() {
-        AggregatedPrice price = new AggregatedPrice(
+        AggregatedPriceEntity price = new AggregatedPriceEntity(
                 "BTCUSDT", new BigDecimal("50000"), new BigDecimal("50100"),
                 "BINANCE", "HUOBI", LocalDateTime.now());
         when(priceService.getLatestPrice("BTCUSDT")).thenReturn(Optional.of(price));
@@ -67,7 +67,7 @@ class TradeServiceTest {
 
     @Test
     void executeSellTrade_success() {
-        AggregatedPrice price = new AggregatedPrice(
+        AggregatedPriceEntity price = new AggregatedPriceEntity(
                 "ETHUSDT", new BigDecimal("3000"), new BigDecimal("3010"),
                 "HUOBI", "BINANCE", LocalDateTime.now());
         when(priceService.getLatestPrice("ETHUSDT")).thenReturn(Optional.of(price));
@@ -115,7 +115,7 @@ class TradeServiceTest {
 
     @Test
     void executeTrade_stalePrice_throwsException() {
-        AggregatedPrice stalePrice = new AggregatedPrice(
+        AggregatedPriceEntity stalePrice = new AggregatedPriceEntity(
                 "BTCUSDT", new BigDecimal("50000"), new BigDecimal("50100"),
                 "BINANCE", "HUOBI", LocalDateTime.now().minusSeconds(60));
         when(priceService.getLatestPrice("BTCUSDT")).thenReturn(Optional.of(stalePrice));
@@ -128,7 +128,7 @@ class TradeServiceTest {
 
     @Test
     void executeBuyTrade_insufficientBalance_throwsException() {
-        AggregatedPrice price = new AggregatedPrice(
+        AggregatedPriceEntity price = new AggregatedPriceEntity(
                 "BTCUSDT", new BigDecimal("50000"), new BigDecimal("50100"),
                 "BINANCE", "HUOBI", LocalDateTime.now());
         when(priceService.getLatestPrice("BTCUSDT")).thenReturn(Optional.of(price));

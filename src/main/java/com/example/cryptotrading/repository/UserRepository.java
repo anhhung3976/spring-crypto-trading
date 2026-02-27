@@ -1,7 +1,7 @@
 package com.example.cryptotrading.repository;
 
-import com.example.cryptotrading.entity.User;
+import com.example.cryptotrading.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<UserEntity, Long> {
 }

@@ -1,14 +1,14 @@
 package com.example.cryptotrading.repository;
 
-import com.example.cryptotrading.entity.Wallet;
+import com.example.cryptotrading.entity.WalletEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface WalletRepository extends JpaRepository<Wallet, Long> {
+public interface WalletRepository extends JpaRepository<WalletEntity, Long> {
 
-    List<Wallet> findByUserId(Long userId);
+    List<WalletEntity> findByUserId(Long userId);
 
-    Optional<Wallet> findByUserIdAndCurrency(Long userId, String currency);
+    Optional<WalletEntity> findByUserIdAndCurrency(Long userId, String currency);
 }

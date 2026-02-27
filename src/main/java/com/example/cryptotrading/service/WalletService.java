@@ -1,7 +1,7 @@
 package com.example.cryptotrading.service;
 
 import com.example.cryptotrading.dto.WalletBalanceResponse;
-import com.example.cryptotrading.entity.Wallet;
+import com.example.cryptotrading.entity.WalletEntity;
 import com.example.cryptotrading.exception.InsufficientBalanceException;
 import com.example.cryptotrading.repository.WalletRepository;
 import org.springframework.stereotype.Service;
@@ -28,7 +28,7 @@ public class WalletService {
 
     @Transactional
     public void debit(Long userId, String currency, BigDecimal amount) {
-        Wallet wallet = walletRepository.findByUserIdAndCurrency(userId, currency)
+        WalletEntity wallet = walletRepository.findByUserIdAndCurrency(userId, currency)
                 .orElseThrow(() -> new IllegalArgumentException("Wallet not found for currency: " + currency));
 
         if (wallet.getBalance().compareTo(amount) < 0) {
@@ -42,7 +42,7 @@ public class WalletService {
 
     @Transactional
     public void credit(Long userId, String currency, BigDecimal amount) {
-        Wallet wallet = walletRepository.findByUserIdAndCurrency(userId, currency)
+        WalletEntity wallet = walletRepository.findByUserIdAndCurrency(userId, currency)
                 .orElseThrow(() -> new IllegalArgumentException("Wallet not found for currency: " + currency));
 
         wallet.setBalance(wallet.getBalance().add(amount));
