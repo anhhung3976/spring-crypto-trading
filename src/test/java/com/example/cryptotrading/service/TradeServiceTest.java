@@ -1,7 +1,7 @@
 package com.example.cryptotrading.service;
 
-import com.example.cryptotrading.dto.TradeRequest;
-import com.example.cryptotrading.dto.TradeResponse;
+import com.example.cryptotrading.dto.TradeRequestDto;
+import com.example.cryptotrading.dto.TradeResponseDto;
 import com.example.cryptotrading.entity.AggregatedPriceEntity;
 import com.example.cryptotrading.exception.InsufficientBalanceException;
 import com.example.cryptotrading.exception.PriceUnavailableException;
@@ -53,8 +53,8 @@ class TradeServiceTest {
         doNothing().when(walletService).credit(any(), any(), any());
         when(tradeRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        TradeRequest request = new TradeRequest("BTCUSDT", "BUY", new BigDecimal("0.5"));
-        TradeResponse response = tradeService.executeTrade(USER_ID, request);
+        TradeRequestDto request = new TradeRequestDto("BTCUSDT", "BUY", new BigDecimal("0.5"));
+        TradeResponseDto response = tradeService.executeTrade(USER_ID, request);
 
         assertNotNull(response);
         assertEquals("BTCUSDT", response.symbol());
@@ -77,8 +77,8 @@ class TradeServiceTest {
         doNothing().when(walletService).credit(any(), any(), any());
         when(tradeRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        TradeRequest request = new TradeRequest("ETHUSDT", "SELL", new BigDecimal("2"));
-        TradeResponse response = tradeService.executeTrade(USER_ID, request);
+        TradeRequestDto request = new TradeRequestDto("ETHUSDT", "SELL", new BigDecimal("2"));
+        TradeResponseDto response = tradeService.executeTrade(USER_ID, request);
 
         assertNotNull(response);
         assertEquals("ETHUSDT", response.symbol());
@@ -91,7 +91,7 @@ class TradeServiceTest {
 
     @Test
     void executeTrade_unsupportedSymbol_throwsException() {
-        TradeRequest request = new TradeRequest("DOGEUSDT", "BUY", new BigDecimal("100"));
+        TradeRequestDto request = new TradeRequestDto("DOGEUSDT", "BUY", new BigDecimal("100"));
 
         assertThrows(IllegalArgumentException.class,
                 () -> tradeService.executeTrade(USER_ID, request));
@@ -99,7 +99,7 @@ class TradeServiceTest {
 
     @Test
     void executeTrade_invalidSide_throwsException() {
-        TradeRequest request = new TradeRequest("BTCUSDT", "HOLD", new BigDecimal("1"));
+        TradeRequestDto request = new TradeRequestDto("BTCUSDT", "HOLD", new BigDecimal("1"));
 
         assertThrows(IllegalArgumentException.class,
                 () -> tradeService.executeTrade(USER_ID, request));
@@ -109,7 +109,7 @@ class TradeServiceTest {
     void executeTrade_priceUnavailable_throwsException() {
         when(priceService.getLatestPrice("BTCUSDT")).thenReturn(Optional.empty());
 
-        TradeRequest request = new TradeRequest("BTCUSDT", "BUY", new BigDecimal("1"));
+        TradeRequestDto request = new TradeRequestDto("BTCUSDT", "BUY", new BigDecimal("1"));
 
         assertThrows(PriceUnavailableException.class,
                 () -> tradeService.executeTrade(USER_ID, request));
@@ -123,7 +123,7 @@ class TradeServiceTest {
         stalePrice.setCtlCreTs(LocalDateTime.now().minusSeconds(60));
         when(priceService.getLatestPrice("BTCUSDT")).thenReturn(Optional.of(stalePrice));
 
-        TradeRequest request = new TradeRequest("BTCUSDT", "BUY", new BigDecimal("1"));
+        TradeRequestDto request = new TradeRequestDto("BTCUSDT", "BUY", new BigDecimal("1"));
 
         assertThrows(PriceUnavailableException.class,
                 () -> tradeService.executeTrade(USER_ID, request));
@@ -139,7 +139,7 @@ class TradeServiceTest {
         doThrow(new InsufficientBalanceException("Insufficient USDT balance"))
                 .when(walletService).debit(any(), any(), any());
 
-        TradeRequest request = new TradeRequest("BTCUSDT", "BUY", new BigDecimal("1000"));
+        TradeRequestDto request = new TradeRequestDto("BTCUSDT", "BUY", new BigDecimal("1000"));
 
         assertThrows(InsufficientBalanceException.class,
                 () -> tradeService.executeTrade(USER_ID, request));

@@ -1,6 +1,6 @@
 package com.example.cryptotrading.controller;
 
-import com.example.cryptotrading.dto.PriceResponse;
+import com.example.cryptotrading.dto.PriceResponseDto;
 import com.example.cryptotrading.service.PriceService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,8 +19,7 @@ public class PriceController {
     }
 
     @GetMapping
-    public List<PriceResponse> getLatestPrices() {
-        List<PriceResponse> prices = priceService.getLatestPrices();
-        return prices;
+    public List<PriceResponseDto> getLatestPrices() {
+        return priceService.getLatestPrices();
     }
 }

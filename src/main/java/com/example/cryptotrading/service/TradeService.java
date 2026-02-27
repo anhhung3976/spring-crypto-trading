@@ -1,7 +1,7 @@
 package com.example.cryptotrading.service;
 
-import com.example.cryptotrading.dto.TradeRequest;
-import com.example.cryptotrading.dto.TradeResponse;
+import com.example.cryptotrading.dto.TradeRequestDto;
+import com.example.cryptotrading.dto.TradeResponseDto;
 import com.example.cryptotrading.entity.AggregatedPriceEntity;
 import com.example.cryptotrading.entity.TradeEntity;
 import com.example.cryptotrading.exception.PriceUnavailableException;
@@ -35,7 +35,7 @@ public class TradeService {
     }
 
     @Transactional
-    public TradeResponse executeTrade(Long userId, TradeRequest request) {
+    public TradeResponseDto executeTrade(Long userId, TradeRequestDto request) {
         String symbol = request.symbol().toUpperCase();
         String side = request.side().toUpperCase();
 
@@ -69,7 +69,7 @@ public class TradeService {
     }
 
     @Transactional(readOnly = true)
-    public List<TradeResponse> getTradeHistory(Long userId) {
+    public List<TradeResponseDto> getTradeHistory(Long userId) {
         return tradeRepository.findByUserIdOrderByCtlCreTsDesc(userId).stream()
                 .map(this::toResponse)
                 .toList();
@@ -96,8 +96,8 @@ public class TradeService {
         return symbol.replace("USDT", "");
     }
 
-    private TradeResponse toResponse(TradeEntity trade) {
-        return new TradeResponse(
+    private TradeResponseDto toResponse(TradeEntity trade) {
+        return new TradeResponseDto(
                 trade.getId(),
                 trade.getSymbol(),
                 trade.getSide(),

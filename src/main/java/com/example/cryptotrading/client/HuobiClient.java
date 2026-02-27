@@ -1,11 +1,5 @@
 package com.example.cryptotrading.client;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
@@ -13,10 +7,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
 @Component
+@Slf4j
 public class HuobiClient {
 
-    private static final Logger log = LoggerFactory.getLogger(HuobiClient.class);
     private static final String URL = "https://api.huobi.pro/market/tickers";
     private static final Set<String> SUPPORTED_SYMBOLS = Set.of("btcusdt", "ethusdt");
 

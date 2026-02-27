@@ -1,6 +1,6 @@
 package com.example.cryptotrading.service;
 
-import com.example.cryptotrading.dto.WalletBalanceResponse;
+import com.example.cryptotrading.dto.WalletBalanceResponseDto;
 import com.example.cryptotrading.entity.WalletEntity;
 import com.example.cryptotrading.exception.InsufficientBalanceException;
 import com.example.cryptotrading.repository.WalletRepository;
@@ -20,9 +20,9 @@ public class WalletService {
     }
 
     @Transactional(readOnly = true)
-    public List<WalletBalanceResponse> getBalances(Long userId) {
+    public List<WalletBalanceResponseDto> getBalances(Long userId) {
         return walletRepository.findByUserId(userId).stream()
-                .map(w -> new WalletBalanceResponse(w.getCurrency(), w.getBalance()))
+                .map(w -> new WalletBalanceResponseDto(w.getCurrency(), w.getBalance()))
                 .toList();
     }
 

@@ -1,25 +1,24 @@
 package com.example.cryptotrading.service;
 
-import com.example.cryptotrading.client.BinanceClient;
-import com.example.cryptotrading.client.BinanceClient.BookTicker;
-import com.example.cryptotrading.client.HuobiClient;
-import com.example.cryptotrading.dto.PriceResponse;
-import com.example.cryptotrading.entity.AggregatedPriceEntity;
-import com.example.cryptotrading.repository.AggregatedPriceRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import com.example.cryptotrading.client.BinanceClient;
+import com.example.cryptotrading.client.BinanceClient.BookTicker;
+import com.example.cryptotrading.client.HuobiClient;
+import com.example.cryptotrading.dto.PriceResponseDto;
+import com.example.cryptotrading.entity.AggregatedPriceEntity;
+import com.example.cryptotrading.repository.AggregatedPriceRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
+@Slf4j
 public class PriceService {
 
-    private static final Logger log = LoggerFactory.getLogger(PriceService.class);
     private static final Set<String> SUPPORTED_SYMBOLS = Set.of("BTCUSDT", "ETHUSDT");
 
     private final BinanceClient binanceClient;
@@ -102,7 +101,7 @@ public class PriceService {
     }
 
     @Transactional(readOnly = true)
-    public List<PriceResponse> getLatestPrices() {
+    public List<PriceResponseDto> getLatestPrices() {
         return priceRepository.findAll().stream()
                 .map(this::toResponse)
                 .toList();
@@ -113,8 +112,8 @@ public class PriceService {
         return priceRepository.findBySymbol(symbol.toUpperCase());
     }
 
-    private PriceResponse toResponse(AggregatedPriceEntity entity) {
-        return new PriceResponse(
+    private PriceResponseDto toResponse(AggregatedPriceEntity entity) {
+        return new PriceResponseDto(
                 entity.getSymbol(),
                 entity.getBidPrice(),
                 entity.getAskPrice(),
