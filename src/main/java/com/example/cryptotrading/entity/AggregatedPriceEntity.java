@@ -31,9 +31,6 @@ public class AggregatedPriceEntity extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "trading_pair_id", nullable = false, unique = true)
-    private Long tradingPairId;
-
     @Column(nullable = false, precision = 30, scale = 8)
     private BigDecimal bidPrice;
 
@@ -47,12 +44,12 @@ public class AggregatedPriceEntity extends BaseEntity {
     private String askExchange;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "trading_pair_id")
+    @JoinColumn(name = "trading_pair_id", nullable = false, unique = true)
     private TradingPairEntity tradingPair;
 
-    public AggregatedPriceEntity(Long tradingPairId, BigDecimal bidPrice, BigDecimal askPrice,
+    public AggregatedPriceEntity(TradingPairEntity tradingPair, BigDecimal bidPrice, BigDecimal askPrice,
                                  String bidExchange, String askExchange) {
-        this.tradingPairId = tradingPairId;
+        this.tradingPair = tradingPair;
         this.bidPrice = bidPrice;
         this.askPrice = askPrice;
         this.bidExchange = bidExchange;

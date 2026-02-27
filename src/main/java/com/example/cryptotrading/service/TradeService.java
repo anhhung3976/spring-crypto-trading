@@ -67,7 +67,7 @@ public class TradeService {
         }
 
         TradeEntity trade = new TradeEntity(
-                userId, tradingPair.getId(), orderSide.getId(),
+                userId, tradingPair, orderSide,
                 executionPrice, request.quantity(), cost);
         trade = tradeRepository.save(trade);
 

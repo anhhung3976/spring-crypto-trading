@@ -1,7 +1,9 @@
 package com.example.cryptotrading.service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -58,56 +60,92 @@ public class PriceService {
             BookTicker huobi = huobiTickers.get(symbol);
 
             if (binance == null && huobi == null) {
-                log.warn("No data available for {} from either exchange", symbol);
+                log.warn("No data available for pairId {}, symbol {} from either exchange", pair.getId(), symbol);
                 continue;
             }
 
-            AggregatedPriceEntity price = priceRepository.findByTradingPairId(pair.getId())
-                    .orElseGet(() -> new AggregatedPriceEntity(pair.getId(), null, null, null, null));
+            AggregatedPriceEntity price = priceRepository.findByTradingPair(pair)
+                    .orElseGet(() -> new AggregatedPriceEntity(pair, null, null, null, null));
+
+            BigDecimal originalBid = price.getBidPrice();
+            BigDecimal originalAsk = price.getAskPrice();
+            String originalBidExchange = price.getBidExchange();
+            String originalAskExchange = price.getAskExchange();
 
             computeBestBid(price, binance, huobi);
             computeBestAsk(price, binance, huobi);
 
+            if (!isChanged(originalBid, price, originalAsk, originalBidExchange, originalAskExchange)) {
+                log.info("Aggregated price for pairId {}, symbol {} unchanged, skipping save", pair.getId(), symbol);
+                continue;
+            }
+
             priceRepository.save(price);
-            log.info("Aggregated {} - bid: {} ({}), ask: {} ({})",
-                    symbol, price.getBidPrice(), price.getBidExchange(),
+            log.info("Aggregated pairId {}, symbol {} - bid: {} ({}), ask: {} ({})",
+                    pair.getId(), symbol, price.getBidPrice(), price.getBidExchange(),
                     price.getAskPrice(), price.getAskExchange());
         }
     }
 
+    private static boolean isChanged(BigDecimal originalBid, AggregatedPriceEntity price, BigDecimal originalAsk,
+            String originalBidExchange, String originalAskExchange) {
+        return !Objects.equals(originalBid, price.getBidPrice())
+                || !Objects.equals(originalAsk, price.getAskPrice())
+                || !Objects.equals(originalBidExchange, price.getBidExchange())
+                || !Objects.equals(originalAskExchange, price.getAskExchange());
+    }
+
     private void computeBestBid(AggregatedPriceEntity price, BookTicker binance, BookTicker huobi) {
-        if (binance != null && huobi != null) {
-            if (binance.bidPrice().compareTo(huobi.bidPrice()) >= 0) {
-                price.setBidPrice(binance.bidPrice());
-                price.setBidExchange(BINANCE);
-            } else {
-                price.setBidPrice(huobi.bidPrice());
-                price.setBidExchange(HUOBI);
+        BigDecimal bestBid = null;
+        String bestExchange = null;
+
+        if (binance != null) {
+            bestBid = binance.bidPrice();
+            bestExchange = BINANCE;
+        }
+        if (huobi != null) {
+            if (bestBid == null || huobi.bidPrice().compareTo(bestBid) > 0) {
+                bestBid = huobi.bidPrice();
+                bestExchange = HUOBI;
             }
-        } else if (binance != null) {
-            price.setBidPrice(binance.bidPrice());
-            price.setBidExchange(BINANCE);
-        } else {
-            price.setBidPrice(huobi.bidPrice());
-            price.setBidExchange(HUOBI);
+        }
+        if (price.getBidPrice() != null) {
+            if (bestBid == null || price.getBidPrice().compareTo(bestBid) > 0) {
+                bestBid = price.getBidPrice();
+                bestExchange = price.getBidExchange();
+            }
+        }
+
+        if (bestBid != null) {
+            price.setBidPrice(bestBid);
+            price.setBidExchange(bestExchange != null ? bestExchange : BINANCE);
         }
     }
 
     private void computeBestAsk(AggregatedPriceEntity price, BookTicker binance, BookTicker huobi) {
-        if (binance != null && huobi != null) {
-            if (binance.askPrice().compareTo(huobi.askPrice()) <= 0) {
-                price.setAskPrice(binance.askPrice());
-                price.setAskExchange(BINANCE);
-            } else {
-                price.setAskPrice(huobi.askPrice());
-                price.setAskExchange(HUOBI);
+        BigDecimal bestAsk = null;
+        String bestExchange = null;
+
+        if (binance != null) {
+            bestAsk = binance.askPrice();
+            bestExchange = BINANCE;
+        }
+        if (huobi != null) {
+            if (bestAsk == null || huobi.askPrice().compareTo(bestAsk) < 0) {
+                bestAsk = huobi.askPrice();
+                bestExchange = HUOBI;
             }
-        } else if (binance != null) {
-            price.setAskPrice(binance.askPrice());
-            price.setAskExchange(BINANCE);
-        } else {
-            price.setAskPrice(huobi.askPrice());
-            price.setAskExchange(HUOBI);
+        }
+        if (price.getAskPrice() != null) {
+            if (bestAsk == null || price.getAskPrice().compareTo(bestAsk) < 0) {
+                bestAsk = price.getAskPrice();
+                bestExchange = price.getAskExchange();
+            }
+        }
+
+        if (bestAsk != null) {
+            price.setAskPrice(bestAsk);
+            price.setAskExchange(bestExchange != null ? bestExchange : BINANCE);
         }
     }
 

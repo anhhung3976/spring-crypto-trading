@@ -72,14 +72,14 @@ public final class TestFixtures {
 
     // --- Trading pair entities (with currency relationships set) ---
     public static TradingPairEntity btcusdtPair() {
-        TradingPairEntity pair = new TradingPairEntity(BTCUSDT_PAIR_ID, BTCUSDT, BTC_CURRENCY_ID, USDT_CURRENCY_ID);
+        TradingPairEntity pair = new TradingPairEntity(BTCUSDT_PAIR_ID, BTCUSDT);
         pair.setBaseCurrency(btcCurrency());
         pair.setQuoteCurrency(usdtCurrency());
         return pair;
     }
 
     public static TradingPairEntity ethusdtPair() {
-        TradingPairEntity pair = new TradingPairEntity(ETHUSDT_PAIR_ID, ETHUSDT, ETH_CURRENCY_ID, USDT_CURRENCY_ID);
+        TradingPairEntity pair = new TradingPairEntity(ETHUSDT_PAIR_ID, ETHUSDT);
         pair.setBaseCurrency(ethCurrency());
         pair.setQuoteCurrency(usdtCurrency());
         return pair;
@@ -87,31 +87,31 @@ public final class TestFixtures {
 
     // --- Lightweight trading pairs (no currency relationships, for PriceServiceTest) ---
     public static TradingPairEntity btcusdtPairRef() {
-        return new TradingPairEntity(BTCUSDT_PAIR_ID, BTCUSDT, BTC_CURRENCY_ID, USDT_CURRENCY_ID);
+        return new TradingPairEntity(BTCUSDT_PAIR_ID, BTCUSDT);
     }
 
     public static TradingPairEntity ethusdtPairRef() {
-        return new TradingPairEntity(ETHUSDT_PAIR_ID, ETHUSDT, ETH_CURRENCY_ID, USDT_CURRENCY_ID);
+        return new TradingPairEntity(ETHUSDT_PAIR_ID, ETHUSDT);
     }
 
     // --- Aggregated price entities ---
     public static AggregatedPriceEntity btcAggregatedPrice() {
         AggregatedPriceEntity price = new AggregatedPriceEntity(
-                BTCUSDT_PAIR_ID, BTC_BID, BTC_ASK, BINANCE, HUOBI);
+                btcusdtPair(), BTC_BID, BTC_ASK, BINANCE, HUOBI);
         price.setCtlCreTs(LocalDateTime.now());
         return price;
     }
 
     public static AggregatedPriceEntity ethAggregatedPrice() {
         AggregatedPriceEntity price = new AggregatedPriceEntity(
-                ETHUSDT_PAIR_ID, ETH_BID, ETH_ASK, HUOBI, BINANCE);
+                ethusdtPair(), ETH_BID, ETH_ASK, HUOBI, BINANCE);
         price.setCtlCreTs(LocalDateTime.now());
         return price;
     }
 
     public static AggregatedPriceEntity staleBtcPrice() {
         AggregatedPriceEntity price = new AggregatedPriceEntity(
-                BTCUSDT_PAIR_ID, BTC_BID, BTC_ASK, BINANCE, HUOBI);
+                btcusdtPair(), BTC_BID, BTC_ASK, BINANCE, HUOBI);
         price.setCtlCreTs(LocalDateTime.now().minusSeconds(60));
         return price;
     }

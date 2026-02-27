@@ -26,7 +26,7 @@ public class WalletService {
 
     @Transactional
     public void debit(Long userId, String currencyCode, BigDecimal amount) {
-        WalletEntity wallet = walletRepository.findByUserIdAndCurrency_Code(userId, currencyCode)
+        WalletEntity wallet = walletRepository.findByUserIdAndCurrencyCode(userId, currencyCode)
                 .orElseThrow(() -> new IllegalArgumentException("Wallet not found for currency: " + currencyCode));
 
         if (wallet.getBalance().compareTo(amount) < 0) {
@@ -40,7 +40,7 @@ public class WalletService {
 
     @Transactional
     public void credit(Long userId, String currencyCode, BigDecimal amount) {
-        WalletEntity wallet = walletRepository.findByUserIdAndCurrency_Code(userId, currencyCode)
+        WalletEntity wallet = walletRepository.findByUserIdAndCurrencyCode(userId, currencyCode)
                 .orElseThrow(() -> new IllegalArgumentException("Wallet not found for currency: " + currencyCode));
 
         wallet.setBalance(wallet.getBalance().add(amount));
