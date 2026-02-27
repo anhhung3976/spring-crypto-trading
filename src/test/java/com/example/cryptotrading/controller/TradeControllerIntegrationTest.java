@@ -1,10 +1,9 @@
 package com.example.cryptotrading.controller;
 
-import com.example.cryptotrading.entity.AggregatedPrice;
+import com.example.cryptotrading.entity.AggregatedPriceEntity;
 import com.example.cryptotrading.repository.AggregatedPriceRepository;
 import com.example.cryptotrading.repository.TradeRepository;
 import com.example.cryptotrading.repository.WalletRepository;
-import com.example.cryptotrading.entity.Wallet;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,10 +48,10 @@ class TradeControllerIntegrationTest {
         resetWalletBalance("BTC", new BigDecimal("0.00000000"));
         resetWalletBalance("ETH", new BigDecimal("0.00000000"));
 
-        priceRepository.save(new AggregatedPrice(
+        priceRepository.save(new AggregatedPriceEntity(
                 "BTCUSDT", new BigDecimal("50000"), new BigDecimal("50100"),
                 "BINANCE", "HUOBI", LocalDateTime.now()));
-        priceRepository.save(new AggregatedPrice(
+        priceRepository.save(new AggregatedPriceEntity(
                 "ETHUSDT", new BigDecimal("3000"), new BigDecimal("3010"),
                 "HUOBI", "BINANCE", LocalDateTime.now()));
     }

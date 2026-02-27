@@ -3,7 +3,7 @@ package com.example.cryptotrading.service;
 import com.example.cryptotrading.client.BinanceClient;
 import com.example.cryptotrading.client.BinanceClient.BookTicker;
 import com.example.cryptotrading.client.HuobiClient;
-import com.example.cryptotrading.entity.AggregatedPrice;
+import com.example.cryptotrading.entity.AggregatedPriceEntity;
 import com.example.cryptotrading.repository.AggregatedPriceRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -57,19 +57,19 @@ class PriceServiceTest {
 
         priceService.aggregatePrices();
 
-        ArgumentCaptor<AggregatedPrice> captor = ArgumentCaptor.forClass(AggregatedPrice.class);
+        ArgumentCaptor<AggregatedPriceEntity> captor = ArgumentCaptor.forClass(AggregatedPriceEntity.class);
         verify(priceRepository, times(2)).save(captor.capture());
 
         var savedPrices = captor.getAllValues();
 
-        AggregatedPrice btc = savedPrices.stream()
+        AggregatedPriceEntity btc = savedPrices.stream()
                 .filter(p -> "BTCUSDT".equals(p.getSymbol())).findFirst().orElseThrow();
         assertEquals(new BigDecimal("50050"), btc.getBidPrice());
         assertEquals("HUOBI", btc.getBidExchange());
         assertEquals(new BigDecimal("50080"), btc.getAskPrice());
         assertEquals("HUOBI", btc.getAskExchange());
 
-        AggregatedPrice eth = savedPrices.stream()
+        AggregatedPriceEntity eth = savedPrices.stream()
                 .filter(p -> "ETHUSDT".equals(p.getSymbol())).findFirst().orElseThrow();
         assertEquals(new BigDecimal("3000"), eth.getBidPrice());
         assertEquals("BINANCE", eth.getBidExchange());
@@ -90,10 +90,10 @@ class PriceServiceTest {
 
         priceService.aggregatePrices();
 
-        ArgumentCaptor<AggregatedPrice> captor = ArgumentCaptor.forClass(AggregatedPrice.class);
+        ArgumentCaptor<AggregatedPriceEntity> captor = ArgumentCaptor.forClass(AggregatedPriceEntity.class);
         verify(priceRepository).save(captor.capture());
 
-        AggregatedPrice saved = captor.getValue();
+        AggregatedPriceEntity saved = captor.getValue();
         assertEquals("BTCUSDT", saved.getSymbol());
         assertEquals(new BigDecimal("50000"), saved.getBidPrice());
         assertEquals(new BigDecimal("50100"), saved.getAskPrice());

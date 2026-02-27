@@ -2,8 +2,8 @@ package com.example.cryptotrading.service;
 
 import com.example.cryptotrading.dto.TradeRequest;
 import com.example.cryptotrading.dto.TradeResponse;
-import com.example.cryptotrading.entity.AggregatedPrice;
-import com.example.cryptotrading.entity.Trade;
+import com.example.cryptotrading.entity.AggregatedPriceEntity;
+import com.example.cryptotrading.entity.TradeEntity;
 import com.example.cryptotrading.exception.PriceUnavailableException;
 import com.example.cryptotrading.repository.TradeRepository;
 import org.springframework.stereotype.Service;
@@ -41,7 +41,7 @@ public class TradeService {
 
         validateRequest(symbol, side);
 
-        AggregatedPrice aggregatedPrice = priceService.getLatestPrice(symbol)
+        AggregatedPriceEntity aggregatedPrice = priceService.getLatestPrice(symbol)
                 .orElseThrow(() -> new PriceUnavailableException("No price available for " + symbol));
 
         validatePriceFreshness(aggregatedPrice);
@@ -63,7 +63,7 @@ public class TradeService {
             walletService.credit(userId, "USDT", cost);
         }
 
-        Trade trade = new Trade(userId, symbol, side, executionPrice, request.quantity(), cost, now);
+        TradeEntity trade = new TradeEntity(userId, symbol, side, executionPrice, request.quantity(), cost, now);
         trade = tradeRepository.save(trade);
 
         return toResponse(trade);
@@ -85,7 +85,7 @@ public class TradeService {
         }
     }
 
-    private void validatePriceFreshness(AggregatedPrice price) {
+    private void validatePriceFreshness(AggregatedPriceEntity price) {
         long ageSeconds = ChronoUnit.SECONDS.between(price.getUpdatedAt(), LocalDateTime.now());
         if (ageSeconds > MAX_PRICE_AGE_SECONDS) {
             throw new PriceUnavailableException(
@@ -97,7 +97,7 @@ public class TradeService {
         return symbol.replace("USDT", "");
     }
 
-    private TradeResponse toResponse(Trade trade) {
+    private TradeResponse toResponse(TradeEntity trade) {
         return new TradeResponse(
                 trade.getId(),
                 trade.getSymbol(),

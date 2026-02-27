@@ -4,7 +4,7 @@ import com.example.cryptotrading.client.BinanceClient;
 import com.example.cryptotrading.client.BinanceClient.BookTicker;
 import com.example.cryptotrading.client.HuobiClient;
 import com.example.cryptotrading.dto.PriceResponse;
-import com.example.cryptotrading.entity.AggregatedPrice;
+import com.example.cryptotrading.entity.AggregatedPriceEntity;
 import com.example.cryptotrading.repository.AggregatedPriceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,8 +55,8 @@ public class PriceService {
                 continue;
             }
 
-            AggregatedPrice price = priceRepository.findBySymbol(symbol)
-                    .orElse(new AggregatedPrice(symbol, null, null, null, null, now));
+            AggregatedPriceEntity price = priceRepository.findBySymbol(symbol)
+                    .orElse(new AggregatedPriceEntity(symbol, null, null, null, null, now));
 
             computeBestBid(price, binance, huobi);
             computeBestAsk(price, binance, huobi);
@@ -69,7 +69,7 @@ public class PriceService {
         }
     }
 
-    private void computeBestBid(AggregatedPrice price, BookTicker binance, BookTicker huobi) {
+    private void computeBestBid(AggregatedPriceEntity price, BookTicker binance, BookTicker huobi) {
         if (binance != null && huobi != null) {
             if (binance.bidPrice().compareTo(huobi.bidPrice()) >= 0) {
                 price.setBidPrice(binance.bidPrice());
@@ -87,7 +87,7 @@ public class PriceService {
         }
     }
 
-    private void computeBestAsk(AggregatedPrice price, BookTicker binance, BookTicker huobi) {
+    private void computeBestAsk(AggregatedPriceEntity price, BookTicker binance, BookTicker huobi) {
         if (binance != null && huobi != null) {
             if (binance.askPrice().compareTo(huobi.askPrice()) <= 0) {
                 price.setAskPrice(binance.askPrice());
@@ -113,11 +113,11 @@ public class PriceService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<AggregatedPrice> getLatestPrice(String symbol) {
+    public Optional<AggregatedPriceEntity> getLatestPrice(String symbol) {
         return priceRepository.findBySymbol(symbol.toUpperCase());
     }
 
-    private PriceResponse toResponse(AggregatedPrice entity) {
+    private PriceResponse toResponse(AggregatedPriceEntity entity) {
         return new PriceResponse(
                 entity.getSymbol(),
                 entity.getBidPrice(),

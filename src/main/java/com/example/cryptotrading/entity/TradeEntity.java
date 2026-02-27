@@ -1,18 +1,29 @@
 package com.example.cryptotrading.entity;
 
+import static com.example.cryptotrading.entity.TradeEntity.TABLE_NAME;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "trades")
-public class Trade {
+@Table(name = TABLE_NAME)
+@Getter
+@Setter
+@NoArgsConstructor
+public class TradeEntity extends BaseEntity {
+
+    public static final String TABLE_NAME = "crypto_trade";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,11 +50,8 @@ public class Trade {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    protected Trade() {
-    }
-
-    public Trade(Long userId, String symbol, String side, BigDecimal price,
-                 BigDecimal quantity, BigDecimal cost, LocalDateTime createdAt) {
+    public TradeEntity(Long userId, String symbol, String side, BigDecimal price,
+                       BigDecimal quantity, BigDecimal cost, LocalDateTime createdAt) {
         this.userId = userId;
         this.symbol = symbol;
         this.side = side;
@@ -51,37 +59,5 @@ public class Trade {
         this.quantity = quantity;
         this.cost = cost;
         this.createdAt = createdAt;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public String getSymbol() {
-        return symbol;
-    }
-
-    public String getSide() {
-        return side;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public BigDecimal getQuantity() {
-        return quantity;
-    }
-
-    public BigDecimal getCost() {
-        return cost;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
     }
 }
