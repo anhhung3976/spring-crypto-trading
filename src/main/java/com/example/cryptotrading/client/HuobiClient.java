@@ -19,11 +19,13 @@ import org.springframework.web.client.RestTemplate;
 public class HuobiClient {
 
     private static final String URL = "https://api.huobi.pro/market/tickers";
-    private static final Set<String> SUPPORTED_SYMBOLS = Set.of("btcusdt", "ethusdt");
 
     private final RestTemplate restTemplate;
 
-    public Map<String, BinanceClient.BookTicker> getBookTickers() {
+    public Map<String, BinanceClient.BookTicker> getBookTickers(Set<String> supportedSymbols) {
+        Set<String> lowerCaseSymbols = supportedSymbols.stream()
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
         try {
             HuobiResponse response = restTemplate.getForObject(URL, HuobiResponse.class);
 
@@ -32,7 +34,7 @@ public class HuobiClient {
             }
 
             return response.data().stream()
-                    .filter(t -> SUPPORTED_SYMBOLS.contains(t.symbol()))
+                    .filter(t -> lowerCaseSymbols.contains(t.symbol()))
                     .collect(Collectors.toMap(
                             t -> t.symbol().toUpperCase(),
                             t -> new BinanceClient.BookTicker(t.bid(), t.ask())

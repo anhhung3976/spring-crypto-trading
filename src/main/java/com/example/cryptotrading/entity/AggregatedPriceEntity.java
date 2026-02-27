@@ -4,9 +4,12 @@ import static com.example.cryptotrading.entity.AggregatedPriceEntity.TABLE_NAME;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,8 +31,8 @@ public class AggregatedPriceEntity extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 10)
-    private String symbol;
+    @Column(name = "trading_pair_id", nullable = false, unique = true)
+    private Long tradingPairId;
 
     @Column(nullable = false, precision = 30, scale = 8)
     private BigDecimal bidPrice;
@@ -43,9 +46,13 @@ public class AggregatedPriceEntity extends BaseEntity {
     @Column(length = 20)
     private String askExchange;
 
-    public AggregatedPriceEntity(String symbol, BigDecimal bidPrice, BigDecimal askPrice,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "trading_pair_id")
+    private TradingPairEntity tradingPair;
+
+    public AggregatedPriceEntity(Long tradingPairId, BigDecimal bidPrice, BigDecimal askPrice,
                                  String bidExchange, String askExchange) {
-        this.symbol = symbol;
+        this.tradingPairId = tradingPairId;
         this.bidPrice = bidPrice;
         this.askPrice = askPrice;
         this.bidExchange = bidExchange;

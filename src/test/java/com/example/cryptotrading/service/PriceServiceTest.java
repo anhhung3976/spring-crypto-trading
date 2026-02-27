@@ -3,9 +3,10 @@ package com.example.cryptotrading.service;
 import com.example.cryptotrading.client.BinanceClient;
 import com.example.cryptotrading.client.BinanceClient.BookTicker;
 import com.example.cryptotrading.client.HuobiClient;
-import com.example.cryptotrading.dto.PriceResponseDto;
 import com.example.cryptotrading.entity.AggregatedPriceEntity;
+import com.example.cryptotrading.entity.TradingPairEntity;
 import com.example.cryptotrading.repository.AggregatedPriceRepository;
+import com.example.cryptotrading.repository.TradingPairRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -19,7 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.example.cryptotrading.TestFixtures.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -38,23 +41,32 @@ class PriceServiceTest {
     @Mock
     private AggregatedPriceRepository priceRepository;
 
+    @Mock
+    private TradingPairRepository tradingPairRepository;
+
     @InjectMocks
     private PriceService priceService;
 
+    private void mockActivePairs(TradingPairEntity... pairs) {
+        when(tradingPairRepository.findByCtlActTrue()).thenReturn(List.of(pairs));
+    }
+
     @Test
     void aggregatePrices_selectsBestFromBothExchanges() {
+        mockActivePairs(btcusdtPairRef(), ethusdtPairRef());
+
         Map<String, BookTicker> binance = Map.of(
-                "BTCUSDT", new BookTicker(new BigDecimal("50000"), new BigDecimal("50100")),
-                "ETHUSDT", new BookTicker(new BigDecimal("3000"), new BigDecimal("3010"))
+                BTCUSDT, new BookTicker(new BigDecimal("50000"), new BigDecimal("50100")),
+                ETHUSDT, new BookTicker(new BigDecimal("3000"), new BigDecimal("3010"))
         );
         Map<String, BookTicker> huobi = Map.of(
-                "BTCUSDT", new BookTicker(new BigDecimal("50050"), new BigDecimal("50080")),
-                "ETHUSDT", new BookTicker(new BigDecimal("2990"), new BigDecimal("3005"))
+                BTCUSDT, new BookTicker(new BigDecimal("50050"), new BigDecimal("50080")),
+                ETHUSDT, new BookTicker(new BigDecimal("2990"), new BigDecimal("3005"))
         );
 
-        when(binanceClient.getBookTickers()).thenReturn(binance);
-        when(huobiClient.getBookTickers()).thenReturn(huobi);
-        when(priceRepository.findBySymbol(any())).thenReturn(Optional.empty());
+        when(binanceClient.getBookTickers(ALL_SYMBOLS)).thenReturn(binance);
+        when(huobiClient.getBookTickers(ALL_SYMBOLS)).thenReturn(huobi);
+        when(priceRepository.findByTradingPairId(any())).thenReturn(Optional.empty());
         when(priceRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         priceService.aggregatePrices();
@@ -65,29 +77,29 @@ class PriceServiceTest {
         var savedPrices = captor.getAllValues();
 
         AggregatedPriceEntity btc = savedPrices.stream()
-                .filter(p -> "BTCUSDT".equals(p.getSymbol())).findFirst().orElseThrow();
+                .filter(p -> p.getTradingPairId().equals(BTCUSDT_PAIR_ID)).findFirst().orElseThrow();
         assertEquals(new BigDecimal("50050"), btc.getBidPrice());
-        assertEquals("HUOBI", btc.getBidExchange());
+        assertEquals(HUOBI, btc.getBidExchange());
         assertEquals(new BigDecimal("50080"), btc.getAskPrice());
-        assertEquals("HUOBI", btc.getAskExchange());
+        assertEquals(HUOBI, btc.getAskExchange());
 
         AggregatedPriceEntity eth = savedPrices.stream()
-                .filter(p -> "ETHUSDT".equals(p.getSymbol())).findFirst().orElseThrow();
+                .filter(p -> p.getTradingPairId().equals(ETHUSDT_PAIR_ID)).findFirst().orElseThrow();
         assertEquals(new BigDecimal("3000"), eth.getBidPrice());
-        assertEquals("BINANCE", eth.getBidExchange());
+        assertEquals(BINANCE, eth.getBidExchange());
         assertEquals(new BigDecimal("3005"), eth.getAskPrice());
-        assertEquals("HUOBI", eth.getAskExchange());
+        assertEquals(HUOBI, eth.getAskExchange());
     }
 
     @Test
     void aggregatePrices_onlyOneExchangeAvailable_usesThatExchange() {
-        Map<String, BookTicker> binance = Map.of(
-                "BTCUSDT", new BookTicker(new BigDecimal("50000"), new BigDecimal("50100"))
-        );
+        mockActivePairs(btcusdtPairRef(), ethusdtPairRef());
 
-        when(binanceClient.getBookTickers()).thenReturn(binance);
-        when(huobiClient.getBookTickers()).thenReturn(Collections.emptyMap());
-        when(priceRepository.findBySymbol("BTCUSDT")).thenReturn(Optional.empty());
+        Map<String, BookTicker> binance = Map.of(BTCUSDT, btcBinanceTicker());
+
+        when(binanceClient.getBookTickers(ALL_SYMBOLS)).thenReturn(binance);
+        when(huobiClient.getBookTickers(ALL_SYMBOLS)).thenReturn(Collections.emptyMap());
+        when(priceRepository.findByTradingPairId(BTCUSDT_PAIR_ID)).thenReturn(Optional.empty());
         when(priceRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         priceService.aggregatePrices();
@@ -96,17 +108,19 @@ class PriceServiceTest {
         verify(priceRepository).save(captor.capture());
 
         AggregatedPriceEntity saved = captor.getValue();
-        assertEquals("BTCUSDT", saved.getSymbol());
-        assertEquals(new BigDecimal("50000"), saved.getBidPrice());
-        assertEquals(new BigDecimal("50100"), saved.getAskPrice());
-        assertEquals("BINANCE", saved.getBidExchange());
-        assertEquals("BINANCE", saved.getAskExchange());
+        assertEquals(BTCUSDT_PAIR_ID, saved.getTradingPairId());
+        assertEquals(BTC_BID, saved.getBidPrice());
+        assertEquals(BTC_ASK, saved.getAskPrice());
+        assertEquals(BINANCE, saved.getBidExchange());
+        assertEquals(BINANCE, saved.getAskExchange());
     }
 
     @Test
     void aggregatePrices_bothExchangesFail_skipsSave() {
-        when(binanceClient.getBookTickers()).thenReturn(Collections.emptyMap());
-        when(huobiClient.getBookTickers()).thenReturn(Collections.emptyMap());
+        mockActivePairs(btcusdtPairRef(), ethusdtPairRef());
+
+        when(binanceClient.getBookTickers(ALL_SYMBOLS)).thenReturn(Collections.emptyMap());
+        when(huobiClient.getBookTickers(ALL_SYMBOLS)).thenReturn(Collections.emptyMap());
 
         priceService.aggregatePrices();
 
@@ -114,26 +128,24 @@ class PriceServiceTest {
     }
 
     @Test
-    void getLatestPrices_returnsMappedDtos() {
-        AggregatedPriceEntity entity = new AggregatedPriceEntity(
-                "BTCUSDT",
-                new BigDecimal("50000"),
-                new BigDecimal("50100"),
-                "BINANCE",
-                "HUOBI"
-        );
+    void aggregatePrices_noActivePairs_skipsAggregation() {
+        when(tradingPairRepository.findByCtlActTrue()).thenReturn(Collections.emptyList());
 
-        when(priceRepository.findAll()).thenReturn(List.of(entity));
+        priceService.aggregatePrices();
 
-        List<PriceResponseDto> prices = priceService.getLatestPrices();
-
-        assertEquals(1, prices.size());
-        PriceResponseDto dto = prices.get(0);
-        assertEquals("BTCUSDT", dto.symbol());
-        assertEquals(new BigDecimal("50000"), dto.bidPrice());
-        assertEquals(new BigDecimal("50100"), dto.askPrice());
-        assertEquals("BINANCE", dto.bidExchange());
-        assertEquals("HUOBI", dto.askExchange());
+        verify(binanceClient, never()).getBookTickers(any());
+        verify(huobiClient, never()).getBookTickers(any());
+        verify(priceRepository, never()).save(any());
     }
 
+    @Test
+    void getLatestPrice_delegatesToRepository() {
+        AggregatedPriceEntity entity = btcAggregatedPrice();
+        when(priceRepository.findByTradingPair_Symbol(BTCUSDT)).thenReturn(Optional.of(entity));
+
+        Optional<AggregatedPriceEntity> result = priceService.getLatestPrice(BTCUSDT);
+
+        assertTrue(result.isPresent());
+        assertEquals(BTC_BID, result.get().getBidPrice());
+    }
 }
