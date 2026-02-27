@@ -46,7 +46,8 @@ class TradeServiceTest {
     void executeBuyTrade_success() {
         AggregatedPriceEntity price = new AggregatedPriceEntity(
                 "BTCUSDT", new BigDecimal("50000"), new BigDecimal("50100"),
-                "BINANCE", "HUOBI", LocalDateTime.now());
+                "BINANCE", "HUOBI");
+        price.setCtlCreTs(LocalDateTime.now());
         when(priceService.getLatestPrice("BTCUSDT")).thenReturn(Optional.of(price));
         doNothing().when(walletService).debit(any(), any(), any());
         doNothing().when(walletService).credit(any(), any(), any());
@@ -69,7 +70,8 @@ class TradeServiceTest {
     void executeSellTrade_success() {
         AggregatedPriceEntity price = new AggregatedPriceEntity(
                 "ETHUSDT", new BigDecimal("3000"), new BigDecimal("3010"),
-                "HUOBI", "BINANCE", LocalDateTime.now());
+                "HUOBI", "BINANCE");
+        price.setCtlCreTs(LocalDateTime.now());
         when(priceService.getLatestPrice("ETHUSDT")).thenReturn(Optional.of(price));
         doNothing().when(walletService).debit(any(), any(), any());
         doNothing().when(walletService).credit(any(), any(), any());
@@ -117,7 +119,8 @@ class TradeServiceTest {
     void executeTrade_stalePrice_throwsException() {
         AggregatedPriceEntity stalePrice = new AggregatedPriceEntity(
                 "BTCUSDT", new BigDecimal("50000"), new BigDecimal("50100"),
-                "BINANCE", "HUOBI", LocalDateTime.now().minusSeconds(60));
+                "BINANCE", "HUOBI");
+        stalePrice.setCtlCreTs(LocalDateTime.now().minusSeconds(60));
         when(priceService.getLatestPrice("BTCUSDT")).thenReturn(Optional.of(stalePrice));
 
         TradeRequest request = new TradeRequest("BTCUSDT", "BUY", new BigDecimal("1"));
@@ -130,7 +133,8 @@ class TradeServiceTest {
     void executeBuyTrade_insufficientBalance_throwsException() {
         AggregatedPriceEntity price = new AggregatedPriceEntity(
                 "BTCUSDT", new BigDecimal("50000"), new BigDecimal("50100"),
-                "BINANCE", "HUOBI", LocalDateTime.now());
+                "BINANCE", "HUOBI");
+        price.setCtlCreTs(LocalDateTime.now());
         when(priceService.getLatestPrice("BTCUSDT")).thenReturn(Optional.of(price));
         doThrow(new InsufficientBalanceException("Insufficient USDT balance"))
                 .when(walletService).debit(any(), any(), any());

@@ -2,7 +2,6 @@ package com.example.cryptotrading.controller;
 
 import com.example.cryptotrading.dto.WalletBalanceResponse;
 import com.example.cryptotrading.service.WalletService;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,8 +21,8 @@ public class WalletController {
     }
 
     @GetMapping
-    public ResponseEntity<List<WalletBalanceResponse>> getBalances() {
+    public List<WalletBalanceResponse> getBalances() {
         List<WalletBalanceResponse> balances = walletService.getBalances(DEFAULT_USER_ID);
-        return ResponseEntity.ok(balances);
+        return balances;
     }
 }

@@ -43,16 +43,16 @@ public class AggregatedPriceEntity extends BaseEntity {
     @Column(length = 20)
     private String askExchange;
 
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
-
     public AggregatedPriceEntity(String symbol, BigDecimal bidPrice, BigDecimal askPrice,
-                                 String bidExchange, String askExchange, LocalDateTime updatedAt) {
+                                 String bidExchange, String askExchange) {
         this.symbol = symbol;
         this.bidPrice = bidPrice;
         this.askPrice = askPrice;
         this.bidExchange = bidExchange;
         this.askExchange = askExchange;
-        this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return getCtlModTs() != null ? getCtlModTs() : getCtlCreTs();
     }
 }

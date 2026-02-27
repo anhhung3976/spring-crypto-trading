@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface TradeRepository extends JpaRepository<TradeEntity, Long> {
 
-    List<TradeEntity> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<TradeEntity> findByUserIdOrderByCtlCreTsDesc(Long userId);
 }

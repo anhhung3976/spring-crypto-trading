@@ -49,7 +49,6 @@ public class TradeService {
         String cryptoCurrency = extractCryptoCurrency(symbol);
         BigDecimal executionPrice;
         BigDecimal cost;
-        LocalDateTime now = LocalDateTime.now();
 
         if ("BUY".equals(side)) {
             executionPrice = aggregatedPrice.getAskPrice();
@@ -63,7 +62,7 @@ public class TradeService {
             walletService.credit(userId, "USDT", cost);
         }
 
-        TradeEntity trade = new TradeEntity(userId, symbol, side, executionPrice, request.quantity(), cost, now);
+        TradeEntity trade = new TradeEntity(userId, symbol, side, executionPrice, request.quantity(), cost);
         trade = tradeRepository.save(trade);
 
         return toResponse(trade);
@@ -71,7 +70,7 @@ public class TradeService {
 
     @Transactional(readOnly = true)
     public List<TradeResponse> getTradeHistory(Long userId) {
-        return tradeRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+        return tradeRepository.findByUserIdOrderByCtlCreTsDesc(userId).stream()
                 .map(this::toResponse)
                 .toList();
     }

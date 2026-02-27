@@ -33,8 +33,8 @@ public class TradeController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TradeResponse>> getTradeHistory() {
+    public List<TradeResponse> getTradeHistory() {
         List<TradeResponse> history = tradeService.getTradeHistory(DEFAULT_USER_ID);
-        return ResponseEntity.ok(history);
+        return history;
     }
 }
