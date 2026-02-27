@@ -3,6 +3,7 @@ package com.example.cryptotrading.service;
 import com.example.cryptotrading.client.BinanceClient;
 import com.example.cryptotrading.client.BinanceClient.BookTicker;
 import com.example.cryptotrading.client.HuobiClient;
+import com.example.cryptotrading.dto.PriceResponseDto;
 import com.example.cryptotrading.entity.AggregatedPriceEntity;
 import com.example.cryptotrading.repository.AggregatedPriceRepository;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -110,4 +112,28 @@ class PriceServiceTest {
 
         verify(priceRepository, never()).save(any());
     }
+
+    @Test
+    void getLatestPrices_returnsMappedDtos() {
+        AggregatedPriceEntity entity = new AggregatedPriceEntity(
+                "BTCUSDT",
+                new BigDecimal("50000"),
+                new BigDecimal("50100"),
+                "BINANCE",
+                "HUOBI"
+        );
+
+        when(priceRepository.findAll()).thenReturn(List.of(entity));
+
+        List<PriceResponseDto> prices = priceService.getLatestPrices();
+
+        assertEquals(1, prices.size());
+        PriceResponseDto dto = prices.get(0);
+        assertEquals("BTCUSDT", dto.symbol());
+        assertEquals(new BigDecimal("50000"), dto.bidPrice());
+        assertEquals(new BigDecimal("50100"), dto.askPrice());
+        assertEquals("BINANCE", dto.bidExchange());
+        assertEquals("HUOBI", dto.askExchange());
+    }
+
 }

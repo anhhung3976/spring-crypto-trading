@@ -6,6 +6,7 @@ import com.example.cryptotrading.entity.AggregatedPriceEntity;
 import com.example.cryptotrading.entity.TradeEntity;
 import com.example.cryptotrading.exception.PriceUnavailableException;
 import com.example.cryptotrading.repository.TradeRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Set;
 
 @Service
+@AllArgsConstructor
 public class TradeService {
 
     private static final Set<String> SUPPORTED_SYMBOLS = Set.of("BTCUSDT", "ETHUSDT");
@@ -26,13 +28,6 @@ public class TradeService {
     private final PriceService priceService;
     private final WalletService walletService;
     private final TradeRepository tradeRepository;
-
-    public TradeService(PriceService priceService, WalletService walletService,
-                        TradeRepository tradeRepository) {
-        this.priceService = priceService;
-        this.walletService = walletService;
-        this.tradeRepository = tradeRepository;
-    }
 
     @Transactional
     public TradeResponseDto executeTrade(Long userId, TradeRequestDto request) {

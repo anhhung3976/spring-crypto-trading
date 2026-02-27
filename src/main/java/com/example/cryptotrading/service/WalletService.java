@@ -4,6 +4,7 @@ import com.example.cryptotrading.dto.WalletBalanceResponseDto;
 import com.example.cryptotrading.entity.WalletEntity;
 import com.example.cryptotrading.exception.InsufficientBalanceException;
 import com.example.cryptotrading.repository.WalletRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,13 +12,10 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class WalletService {
 
     private final WalletRepository walletRepository;
-
-    public WalletService(WalletRepository walletRepository) {
-        this.walletRepository = walletRepository;
-    }
 
     @Transactional(readOnly = true)
     public List<WalletBalanceResponseDto> getBalances(Long userId) {

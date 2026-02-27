@@ -11,11 +11,13 @@ import com.example.cryptotrading.client.HuobiClient;
 import com.example.cryptotrading.dto.PriceResponseDto;
 import com.example.cryptotrading.entity.AggregatedPriceEntity;
 import com.example.cryptotrading.repository.AggregatedPriceRepository;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@AllArgsConstructor
 @Slf4j
 public class PriceService {
 
@@ -24,13 +26,6 @@ public class PriceService {
     private final BinanceClient binanceClient;
     private final HuobiClient huobiClient;
     private final AggregatedPriceRepository priceRepository;
-
-    public PriceService(BinanceClient binanceClient, HuobiClient huobiClient,
-                        AggregatedPriceRepository priceRepository) {
-        this.binanceClient = binanceClient;
-        this.huobiClient = huobiClient;
-        this.priceRepository = priceRepository;
-    }
 
     @Transactional
     public void aggregatePrices() {
