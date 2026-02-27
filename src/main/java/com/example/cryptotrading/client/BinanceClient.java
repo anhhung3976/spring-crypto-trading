@@ -21,11 +21,10 @@ import org.springframework.web.client.RestTemplate;
 public class BinanceClient {
 
     private static final String URL = "https://api.binance.com/api/v3/ticker/bookTicker";
-    private static final Set<String> SUPPORTED_SYMBOLS = Set.of("BTCUSDT", "ETHUSDT");
 
     private final RestTemplate restTemplate;
 
-    public Map<String, BookTicker> getBookTickers() {
+    public Map<String, BookTicker> getBookTickers(Set<String> supportedSymbols) {
         try {
             List<BinanceTicker> response = restTemplate.exchange(
                     URL, HttpMethod.GET, null,
@@ -37,7 +36,7 @@ public class BinanceClient {
             }
 
             return response.stream()
-                    .filter(t -> SUPPORTED_SYMBOLS.contains(t.symbol()))
+                    .filter(t -> supportedSymbols.contains(t.symbol()))
                     .collect(Collectors.toMap(
                             BinanceTicker::symbol,
                             t -> new BookTicker(new BigDecimal(t.bidPrice()), new BigDecimal(t.askPrice()))

@@ -14,8 +14,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
+import static com.example.cryptotrading.TestFixtures.*;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -44,20 +44,18 @@ class TradeControllerIntegrationTest {
         tradeRepository.deleteAll();
         priceRepository.deleteAll();
 
-        resetWalletBalance("USDT", new BigDecimal("50000.00000000"));
-        resetWalletBalance("BTC", new BigDecimal("0.00000000"));
-        resetWalletBalance("ETH", new BigDecimal("0.00000000"));
+        resetWalletBalance(USDT, new BigDecimal("50000.00000000"));
+        resetWalletBalance(BTC, new BigDecimal("0.00000000"));
+        resetWalletBalance(ETH, new BigDecimal("0.00000000"));
 
         priceRepository.save(new AggregatedPriceEntity(
-                "BTCUSDT", new BigDecimal("50000"), new BigDecimal("50100"),
-                "BINANCE", "HUOBI"));
+                BTCUSDT_PAIR_ID, BTC_BID, BTC_ASK, BINANCE, HUOBI));
         priceRepository.save(new AggregatedPriceEntity(
-                "ETHUSDT", new BigDecimal("3000"), new BigDecimal("3010"),
-                "HUOBI", "BINANCE"));
+                ETHUSDT_PAIR_ID, ETH_BID, ETH_ASK, HUOBI, BINANCE));
     }
 
-    private void resetWalletBalance(String currency, BigDecimal balance) {
-        walletRepository.findByUserIdAndCurrency(1L, currency).ifPresent(wallet -> {
+    private void resetWalletBalance(String currencyCode, BigDecimal balance) {
+        walletRepository.findByUserIdAndCurrency_Code(DEFAULT_USER_ID, currencyCode).ifPresent(wallet -> {
             wallet.setBalance(balance);
             walletRepository.save(wallet);
         });
@@ -74,19 +72,19 @@ class TradeControllerIntegrationTest {
     void executeBuyTrade_returnsCreated() throws Exception {
         String requestBody = """
                 {
-                    "symbol": "BTCUSDT",
-                    "side": "BUY",
+                    "symbol": "%s",
+                    "side": "%s",
                     "quantity": 0.1
                 }
-                """;
+                """.formatted(BTCUSDT, BUY);
 
         mockMvc.perform(post("/api/trades")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.symbol").value("BTCUSDT"))
-                .andExpect(jsonPath("$.side").value("BUY"))
-                .andExpect(jsonPath("$.price").value(50100))
+                .andExpect(jsonPath("$.symbol").value(BTCUSDT))
+                .andExpect(jsonPath("$.side").value(BUY))
+                .andExpect(jsonPath("$.price").value(BTC_ASK.intValue()))
                 .andExpect(jsonPath("$.quantity").value(0.1));
     }
 
@@ -94,11 +92,11 @@ class TradeControllerIntegrationTest {
     void executeBuyTrade_thenCheckWalletBalance() throws Exception {
         String buyRequest = """
                 {
-                    "symbol": "ETHUSDT",
-                    "side": "BUY",
+                    "symbol": "%s",
+                    "side": "%s",
                     "quantity": 2
                 }
-                """;
+                """.formatted(ETHUSDT, BUY);
 
         mockMvc.perform(post("/api/trades")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -116,10 +114,10 @@ class TradeControllerIntegrationTest {
         String requestBody = """
                 {
                     "symbol": "DOGEUSDT",
-                    "side": "BUY",
+                    "side": "%s",
                     "quantity": 100
                 }
-                """;
+                """.formatted(BUY);
 
         mockMvc.perform(post("/api/trades")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -131,11 +129,11 @@ class TradeControllerIntegrationTest {
     void getTradeHistory_afterTrade_returnsTrades() throws Exception {
         String buyRequest = """
                 {
-                    "symbol": "BTCUSDT",
-                    "side": "BUY",
+                    "symbol": "%s",
+                    "side": "%s",
                     "quantity": 0.01
                 }
-                """;
+                """.formatted(BTCUSDT, BUY);
 
         mockMvc.perform(post("/api/trades")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -145,8 +143,8 @@ class TradeControllerIntegrationTest {
         mockMvc.perform(get("/api/trades"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].symbol").value("BTCUSDT"))
-                .andExpect(jsonPath("$[0].side").value("BUY"));
+                .andExpect(jsonPath("$[0].symbol").value(BTCUSDT))
+                .andExpect(jsonPath("$[0].side").value(BUY));
     }
 
     @Test

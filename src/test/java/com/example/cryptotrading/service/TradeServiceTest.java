@@ -5,7 +5,9 @@ import com.example.cryptotrading.dto.TradeResponseDto;
 import com.example.cryptotrading.entity.AggregatedPriceEntity;
 import com.example.cryptotrading.exception.InsufficientBalanceException;
 import com.example.cryptotrading.exception.PriceUnavailableException;
+import com.example.cryptotrading.repository.OrderSideRepository;
 import com.example.cryptotrading.repository.TradeRepository;
+import com.example.cryptotrading.repository.TradingPairRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -13,9 +15,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static com.example.cryptotrading.TestFixtures.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -37,111 +39,136 @@ class TradeServiceTest {
     @Mock
     private TradeRepository tradeRepository;
 
+    @Mock
+    private TradingPairRepository tradingPairRepository;
+
+    @Mock
+    private OrderSideRepository orderSideRepository;
+
     @InjectMocks
     private TradeService tradeService;
 
-    private static final Long USER_ID = 1L;
+    private void mockBtcPair() {
+        when(tradingPairRepository.findBySymbol(BTCUSDT)).thenReturn(Optional.of(btcusdtPair()));
+    }
 
-    @Test
-    void executeBuyTrade_success() {
-        AggregatedPriceEntity price = new AggregatedPriceEntity(
-                "BTCUSDT", new BigDecimal("50000"), new BigDecimal("50100"),
-                "BINANCE", "HUOBI");
-        price.setCtlCreTs(LocalDateTime.now());
-        when(priceService.getLatestPrice("BTCUSDT")).thenReturn(Optional.of(price));
+    private void mockEthPair() {
+        when(tradingPairRepository.findBySymbol(ETHUSDT)).thenReturn(Optional.of(ethusdtPair()));
+    }
+
+    private void mockBuySide() {
+        when(orderSideRepository.findByCode(BUY)).thenReturn(Optional.of(buySide()));
+    }
+
+    private void mockSellSide() {
+        when(orderSideRepository.findByCode(SELL)).thenReturn(Optional.of(sellSide()));
+    }
+
+    private void mockFreshBtcPrice() {
+        when(priceService.getLatestPrice(BTCUSDT)).thenReturn(Optional.of(btcAggregatedPrice()));
+    }
+
+    private void mockWalletAndSave() {
         doNothing().when(walletService).debit(any(), any(), any());
         doNothing().when(walletService).credit(any(), any(), any());
         when(tradeRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    }
 
-        TradeRequestDto request = new TradeRequestDto("BTCUSDT", "BUY", new BigDecimal("0.5"));
-        TradeResponseDto response = tradeService.executeTrade(USER_ID, request);
+    @Test
+    void executeBuyTrade_success() {
+        mockBtcPair();
+        mockBuySide();
+        mockFreshBtcPrice();
+        mockWalletAndSave();
+
+        TradeRequestDto request = new TradeRequestDto(BTCUSDT, BUY, new BigDecimal("0.5"));
+        TradeResponseDto response = tradeService.executeTrade(DEFAULT_USER_ID, request);
 
         assertNotNull(response);
-        assertEquals("BTCUSDT", response.symbol());
-        assertEquals("BUY", response.side());
-        assertEquals(new BigDecimal("50100"), response.price());
+        assertEquals(BTCUSDT, response.symbol());
+        assertEquals(BUY, response.side());
+        assertEquals(BTC_ASK, response.price());
         assertEquals(new BigDecimal("0.5"), response.quantity());
 
-        verify(walletService).debit(USER_ID, "USDT", new BigDecimal("25050.00000000"));
-        verify(walletService).credit(USER_ID, "BTC", new BigDecimal("0.5"));
+        verify(walletService).debit(DEFAULT_USER_ID, USDT, new BigDecimal("25050.00000000"));
+        verify(walletService).credit(DEFAULT_USER_ID, BTC, new BigDecimal("0.5"));
     }
 
     @Test
     void executeSellTrade_success() {
-        AggregatedPriceEntity price = new AggregatedPriceEntity(
-                "ETHUSDT", new BigDecimal("3000"), new BigDecimal("3010"),
-                "HUOBI", "BINANCE");
-        price.setCtlCreTs(LocalDateTime.now());
-        when(priceService.getLatestPrice("ETHUSDT")).thenReturn(Optional.of(price));
-        doNothing().when(walletService).debit(any(), any(), any());
-        doNothing().when(walletService).credit(any(), any(), any());
-        when(tradeRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        mockEthPair();
+        mockSellSide();
+        when(priceService.getLatestPrice(ETHUSDT)).thenReturn(Optional.of(ethAggregatedPrice()));
+        mockWalletAndSave();
 
-        TradeRequestDto request = new TradeRequestDto("ETHUSDT", "SELL", new BigDecimal("2"));
-        TradeResponseDto response = tradeService.executeTrade(USER_ID, request);
+        TradeRequestDto request = new TradeRequestDto(ETHUSDT, SELL, new BigDecimal("2"));
+        TradeResponseDto response = tradeService.executeTrade(DEFAULT_USER_ID, request);
 
         assertNotNull(response);
-        assertEquals("ETHUSDT", response.symbol());
-        assertEquals("SELL", response.side());
-        assertEquals(new BigDecimal("3000"), response.price());
+        assertEquals(ETHUSDT, response.symbol());
+        assertEquals(SELL, response.side());
+        assertEquals(ETH_BID, response.price());
 
-        verify(walletService).debit(USER_ID, "ETH", new BigDecimal("2"));
-        verify(walletService).credit(USER_ID, "USDT", new BigDecimal("6000.00000000"));
+        verify(walletService).debit(DEFAULT_USER_ID, ETH, new BigDecimal("2"));
+        verify(walletService).credit(DEFAULT_USER_ID, USDT, new BigDecimal("6000.00000000"));
     }
 
     @Test
     void executeTrade_unsupportedSymbol_throwsException() {
-        TradeRequestDto request = new TradeRequestDto("DOGEUSDT", "BUY", new BigDecimal("100"));
+        when(tradingPairRepository.findBySymbol("DOGEUSDT")).thenReturn(Optional.empty());
+
+        TradeRequestDto request = new TradeRequestDto("DOGEUSDT", BUY, new BigDecimal("100"));
 
         assertThrows(IllegalArgumentException.class,
-                () -> tradeService.executeTrade(USER_ID, request));
+                () -> tradeService.executeTrade(DEFAULT_USER_ID, request));
     }
 
     @Test
     void executeTrade_invalidSide_throwsException() {
-        TradeRequestDto request = new TradeRequestDto("BTCUSDT", "HOLD", new BigDecimal("1"));
+        mockBtcPair();
+        when(orderSideRepository.findByCode("HOLD")).thenReturn(Optional.empty());
+
+        TradeRequestDto request = new TradeRequestDto(BTCUSDT, "HOLD", new BigDecimal("1"));
 
         assertThrows(IllegalArgumentException.class,
-                () -> tradeService.executeTrade(USER_ID, request));
+                () -> tradeService.executeTrade(DEFAULT_USER_ID, request));
     }
 
     @Test
     void executeTrade_priceUnavailable_throwsException() {
-        when(priceService.getLatestPrice("BTCUSDT")).thenReturn(Optional.empty());
+        mockBtcPair();
+        mockBuySide();
+        when(priceService.getLatestPrice(BTCUSDT)).thenReturn(Optional.empty());
 
-        TradeRequestDto request = new TradeRequestDto("BTCUSDT", "BUY", new BigDecimal("1"));
+        TradeRequestDto request = new TradeRequestDto(BTCUSDT, BUY, new BigDecimal("1"));
 
         assertThrows(PriceUnavailableException.class,
-                () -> tradeService.executeTrade(USER_ID, request));
+                () -> tradeService.executeTrade(DEFAULT_USER_ID, request));
     }
 
     @Test
     void executeTrade_stalePrice_throwsException() {
-        AggregatedPriceEntity stalePrice = new AggregatedPriceEntity(
-                "BTCUSDT", new BigDecimal("50000"), new BigDecimal("50100"),
-                "BINANCE", "HUOBI");
-        stalePrice.setCtlCreTs(LocalDateTime.now().minusSeconds(60));
-        when(priceService.getLatestPrice("BTCUSDT")).thenReturn(Optional.of(stalePrice));
+        mockBtcPair();
+        mockBuySide();
+        when(priceService.getLatestPrice(BTCUSDT)).thenReturn(Optional.of(staleBtcPrice()));
 
-        TradeRequestDto request = new TradeRequestDto("BTCUSDT", "BUY", new BigDecimal("1"));
+        TradeRequestDto request = new TradeRequestDto(BTCUSDT, BUY, new BigDecimal("1"));
 
         assertThrows(PriceUnavailableException.class,
-                () -> tradeService.executeTrade(USER_ID, request));
+                () -> tradeService.executeTrade(DEFAULT_USER_ID, request));
     }
 
     @Test
     void executeBuyTrade_insufficientBalance_throwsException() {
-        AggregatedPriceEntity price = new AggregatedPriceEntity(
-                "BTCUSDT", new BigDecimal("50000"), new BigDecimal("50100"),
-                "BINANCE", "HUOBI");
-        price.setCtlCreTs(LocalDateTime.now());
-        when(priceService.getLatestPrice("BTCUSDT")).thenReturn(Optional.of(price));
+        mockBtcPair();
+        mockBuySide();
+        mockFreshBtcPrice();
         doThrow(new InsufficientBalanceException("Insufficient USDT balance"))
                 .when(walletService).debit(any(), any(), any());
 
-        TradeRequestDto request = new TradeRequestDto("BTCUSDT", "BUY", new BigDecimal("1000"));
+        TradeRequestDto request = new TradeRequestDto(BTCUSDT, BUY, new BigDecimal("1000"));
 
         assertThrows(InsufficientBalanceException.class,
-                () -> tradeService.executeTrade(USER_ID, request));
+                () -> tradeService.executeTrade(DEFAULT_USER_ID, request));
     }
 }

@@ -4,9 +4,12 @@ import static com.example.cryptotrading.entity.TradeEntity.TABLE_NAME;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,14 +31,14 @@ public class TradeEntity extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(nullable = false, length = 10)
-    private String symbol;
+    @Column(name = "trading_pair_id", nullable = false)
+    private Long tradingPairId;
 
-    @Column(nullable = false, length = 4)
-    private String side;
+    @Column(name = "order_side_id", nullable = false)
+    private Long orderSideId;
 
     @Column(nullable = false, precision = 30, scale = 8)
     private BigDecimal price;
@@ -46,11 +49,23 @@ public class TradeEntity extends BaseEntity {
     @Column(nullable = false, precision = 30, scale = 8)
     private BigDecimal cost;
 
-    public TradeEntity(Long userId, String symbol, String side, BigDecimal price,
-                       BigDecimal quantity, BigDecimal cost) {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "trading_pair_id")
+    private TradingPairEntity tradingPair;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_side_id")
+    private OrderSideEntity orderSide;
+
+    public TradeEntity(Long userId, Long tradingPairId, Long orderSideId,
+                       BigDecimal price, BigDecimal quantity, BigDecimal cost) {
         this.userId = userId;
-        this.symbol = symbol;
-        this.side = side;
+        this.tradingPairId = tradingPairId;
+        this.orderSideId = orderSideId;
         this.price = price;
         this.quantity = quantity;
         this.cost = cost;
@@ -59,5 +74,4 @@ public class TradeEntity extends BaseEntity {
     public LocalDateTime getCreatedAt() {
         return getCtlCreTs();
     }
-
 }

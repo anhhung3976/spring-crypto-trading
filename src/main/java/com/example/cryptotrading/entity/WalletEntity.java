@@ -4,9 +4,12 @@ import static com.example.cryptotrading.entity.WalletEntity.TABLE_NAME;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
@@ -17,7 +20,7 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = TABLE_NAME, uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"userId", "currency"})
+        @UniqueConstraint(columnNames = {"user_id", "currency_id"})
 })
 @Getter
 @Setter
@@ -30,13 +33,26 @@ public class WalletEntity extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(nullable = false, length = 10)
-    private String currency;
+    @Column(name = "currency_id", nullable = false)
+    private Long currencyId;
 
     @Column(nullable = false, precision = 30, scale = 8)
     private BigDecimal balance;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "currency_id")
+    private CurrencyEntity currency;
+
+    public WalletEntity(Long userId, Long currencyId, BigDecimal balance) {
+        this.userId = userId;
+        this.currencyId = currencyId;
+        this.balance = balance;
+    }
 }

@@ -7,5 +7,7 @@ import java.util.Optional;
 
 public interface AggregatedPriceRepository extends JpaRepository<AggregatedPriceEntity, Long> {
 
-    Optional<AggregatedPriceEntity> findBySymbol(String symbol);
+    Optional<AggregatedPriceEntity> findByTradingPairId(Long tradingPairId);
+
+    Optional<AggregatedPriceEntity> findByTradingPair_Symbol(String symbol);
 }
