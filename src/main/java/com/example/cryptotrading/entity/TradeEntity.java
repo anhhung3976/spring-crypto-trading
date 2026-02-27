@@ -8,7 +8,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -47,17 +46,18 @@ public class TradeEntity extends BaseEntity {
     @Column(nullable = false, precision = 30, scale = 8)
     private BigDecimal cost;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
-
     public TradeEntity(Long userId, String symbol, String side, BigDecimal price,
-                       BigDecimal quantity, BigDecimal cost, LocalDateTime createdAt) {
+                       BigDecimal quantity, BigDecimal cost) {
         this.userId = userId;
         this.symbol = symbol;
         this.side = side;
         this.price = price;
         this.quantity = quantity;
         this.cost = cost;
-        this.createdAt = createdAt;
     }
+
+    public LocalDateTime getCreatedAt() {
+        return getCtlCreTs();
+    }
+
 }

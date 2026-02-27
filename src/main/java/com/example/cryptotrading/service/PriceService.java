@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,8 +43,6 @@ public class PriceService {
             return;
         }
 
-        LocalDateTime now = LocalDateTime.now();
-
         for (String symbol : SUPPORTED_SYMBOLS) {
             BookTicker binance = binanceTickers.get(symbol);
             BookTicker huobi = huobiTickers.get(symbol);
@@ -56,11 +53,10 @@ public class PriceService {
             }
 
             AggregatedPriceEntity price = priceRepository.findBySymbol(symbol)
-                    .orElse(new AggregatedPriceEntity(symbol, null, null, null, null, now));
+                    .orElse(new AggregatedPriceEntity(symbol, null, null, null, null));
 
             computeBestBid(price, binance, huobi);
             computeBestAsk(price, binance, huobi);
-            price.setUpdatedAt(now);
 
             priceRepository.save(price);
             log.info("Aggregated {} - bid: {} ({}), ask: {} ({})",

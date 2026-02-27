@@ -50,10 +50,10 @@ class TradeControllerIntegrationTest {
 
         priceRepository.save(new AggregatedPriceEntity(
                 "BTCUSDT", new BigDecimal("50000"), new BigDecimal("50100"),
-                "BINANCE", "HUOBI", LocalDateTime.now()));
+                "BINANCE", "HUOBI"));
         priceRepository.save(new AggregatedPriceEntity(
                 "ETHUSDT", new BigDecimal("3000"), new BigDecimal("3010"),
-                "HUOBI", "BINANCE", LocalDateTime.now()));
+                "HUOBI", "BINANCE"));
     }
 
     private void resetWalletBalance(String currency, BigDecimal balance) {
