@@ -154,3 +154,4 @@ Data is in-memory and is lost when the application stops.
 - User is already authenticated; API uses a default user (id=1)
 - No integration with external trading systems; execution is simulated using aggregated prices
 - Bid price is used for SELL orders, Ask price for BUY orders
+
