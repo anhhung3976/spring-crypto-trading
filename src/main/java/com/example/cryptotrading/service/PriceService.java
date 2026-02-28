@@ -1,6 +1,7 @@
 package com.example.cryptotrading.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -75,11 +76,14 @@ public class PriceService {
             computeBestBid(price, binance, huobi);
             computeBestAsk(price, binance, huobi);
 
+            LocalDateTime now = LocalDateTime.now();
+            price.setLastCheckedAt(now);
+
             if (!isChanged(originalBid, price, originalAsk, originalBidExchange, originalAskExchange)) {
-                log.info("Aggregated price for pairId {}, symbol {} unchanged, skipping save", pair.getId(), symbol);
+                priceRepository.touchLastChecked(pair, now);
+                log.info("Aggregated price for pairId {}, symbol {} unchanged, updated lastCheckedAt", pair.getId(), symbol);
                 continue;
             }
-
             priceRepository.save(price);
             log.info("Aggregated pairId {}, symbol {} - bid: {} ({}), ask: {} ({})",
                     pair.getId(), symbol, price.getBidPrice(), price.getBidExchange(),
@@ -158,7 +162,7 @@ public class PriceService {
 
     @Transactional(readOnly = true)
     public Optional<AggregatedPriceEntity> getLatestPrice(String symbol) {
-        return priceRepository.findByTradingPair_Symbol(symbol.toUpperCase());
+        return priceRepository.findByTradingPairSymbol(symbol.toUpperCase());
     }
 
     private PriceResponseDto toResponse(AggregatedPriceEntity entity) {
@@ -168,7 +172,7 @@ public class PriceService {
                 entity.getAskPrice(),
                 entity.getBidExchange(),
                 entity.getAskExchange(),
-                entity.getUpdatedAt()
+                entity.getLastCheckedAt() != null ? entity.getLastCheckedAt() : entity.getCtlCreTs()
         );
     }
 }

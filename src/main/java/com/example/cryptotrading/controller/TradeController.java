@@ -1,5 +1,8 @@
 package com.example.cryptotrading.controller;
 
+import com.example.cryptotrading.dto.GenericPage;
+import com.example.cryptotrading.dto.TradeHistoryDto;
+import com.example.cryptotrading.dto.TradeHistoryFilterDto;
 import com.example.cryptotrading.dto.TradeRequestDto;
 import com.example.cryptotrading.dto.TradeResponseDto;
 import com.example.cryptotrading.service.TradeService;
@@ -12,8 +15,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @AllArgsConstructor
@@ -31,7 +32,7 @@ public class TradeController {
     }
 
     @GetMapping
-    public List<TradeResponseDto> getTradeHistory() {
-        return tradeService.getTradeHistory(DEFAULT_USER_ID);
+    public GenericPage<TradeHistoryDto> getTradeHistory(TradeHistoryFilterDto filter) {
+        return tradeService.getTradeHistory(DEFAULT_USER_ID, filter);
     }
 }

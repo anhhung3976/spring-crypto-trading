@@ -10,16 +10,24 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedAttributeNode;
+import jakarta.persistence.NamedEntityGraph;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = TABLE_NAME)
+@NamedEntityGraph(
+        name = "Trade.withRelations",
+        attributeNodes = {
+                @NamedAttributeNode(value = "tradingPair"),
+                @NamedAttributeNode(value = "orderSide")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -59,9 +67,5 @@ public class TradeEntity extends BaseEntity {
         this.price = price;
         this.quantity = quantity;
         this.cost = cost;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return getCtlCreTs();
     }
 }

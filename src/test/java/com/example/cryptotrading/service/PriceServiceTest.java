@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -134,19 +135,23 @@ class PriceServiceTest {
                 btcusdtPairRef(),
                 new BigDecimal("50100"), new BigDecimal("49990"),
                 BINANCE, HUOBI);
+        storedPrice.setCtlCreTs(LocalDateTime.now().minusSeconds(1));
+        storedPrice.setCtlModTs(LocalDateTime.now());
 
         when(binanceClient.getBookTickers(Set.of(BTCUSDT))).thenReturn(binance);
         when(huobiClient.getBookTickers(Set.of(BTCUSDT))).thenReturn(huobi);
         when(priceRepository.findByTradingPair(any())).thenReturn(Optional.of(storedPrice));
+        when(priceRepository.touchLastChecked(any(), any())).thenReturn(1);
 
         priceService.aggregatePrices();
 
-        // Stored price is already best; service should skip unnecessary DB save
+        // Stored price was best; only touchLastChecked (no full save)
+        verify(priceRepository).touchLastChecked(any(), any());
         verify(priceRepository, never()).save(any());
     }
 
     @Test
-    void aggregatePrices_bothExchangesFail_skipsSave() {
+    void aggregatePrices_bothExchangesFail_skipsTouchAndSave() {
         mockActivePairs(btcusdtPairRef(), ethusdtPairRef());
 
         when(binanceClient.getBookTickers(ALL_SYMBOLS)).thenReturn(Collections.emptyMap());
@@ -154,6 +159,7 @@ class PriceServiceTest {
 
         priceService.aggregatePrices();
 
+        verify(priceRepository, never()).touchLastChecked(any(), any());
         verify(priceRepository, never()).save(any());
     }
 
@@ -171,7 +177,7 @@ class PriceServiceTest {
     @Test
     void getLatestPrice_delegatesToRepository() {
         AggregatedPriceEntity entity = btcAggregatedPrice();
-        when(priceRepository.findByTradingPair_Symbol(BTCUSDT)).thenReturn(Optional.of(entity));
+        when(priceRepository.findByTradingPairSymbol(BTCUSDT)).thenReturn(Optional.of(entity));
 
         Optional<AggregatedPriceEntity> result = priceService.getLatestPrice(BTCUSDT);
 

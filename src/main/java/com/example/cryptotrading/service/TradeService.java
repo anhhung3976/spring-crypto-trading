@@ -1,5 +1,9 @@
 package com.example.cryptotrading.service;
 
+import com.example.cryptotrading.domain.OrderSideCodeEnum;
+import com.example.cryptotrading.dto.GenericPage;
+import com.example.cryptotrading.dto.TradeHistoryDto;
+import com.example.cryptotrading.dto.TradeHistoryFilterDto;
 import com.example.cryptotrading.dto.TradeRequestDto;
 import com.example.cryptotrading.dto.TradeResponseDto;
 import com.example.cryptotrading.entity.AggregatedPriceEntity;
@@ -11,6 +15,7 @@ import com.example.cryptotrading.repository.OrderSideRepository;
 import com.example.cryptotrading.repository.TradeRepository;
 import com.example.cryptotrading.repository.TradingPairRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +23,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -35,14 +39,14 @@ public class TradeService {
     @Transactional
     public TradeResponseDto executeTrade(Long userId, TradeRequestDto request) {
         String symbol = request.symbol().toUpperCase();
-        String sideCode = request.side().toUpperCase();
+        OrderSideCodeEnum side = request.side();
 
         TradingPairEntity tradingPair = tradingPairRepository.findBySymbol(symbol)
                 .filter(TradingPairEntity::getCtlAct)
                 .orElseThrow(() -> new IllegalArgumentException("Unsupported trading pair: " + symbol));
 
-        OrderSideEntity orderSide = orderSideRepository.findByCode(sideCode)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid side: " + sideCode + ". Must be BUY or SELL"));
+        OrderSideEntity orderSide = orderSideRepository.findByCode(side)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid side: " + side + ". Must be BUY or SELL"));
 
         AggregatedPriceEntity aggregatedPrice = priceService.getLatestPrice(symbol)
                 .orElseThrow(() -> new PriceUnavailableException("No price available for " + symbol));
@@ -54,7 +58,7 @@ public class TradeService {
         BigDecimal executionPrice;
         BigDecimal cost;
 
-        if ("BUY".equals(sideCode)) {
+        if (OrderSideCodeEnum.BUY == side) {
             executionPrice = aggregatedPrice.getAskPrice();
             cost = request.quantity().multiply(executionPrice).setScale(8, RoundingMode.HALF_UP);
             walletService.debit(userId, quoteCurrencyCode, cost);
@@ -71,28 +75,51 @@ public class TradeService {
                 executionPrice, request.quantity(), cost);
         trade = tradeRepository.save(trade);
 
-        return toResponse(trade, symbol, sideCode);
+        BigDecimal currentBaseBalance = walletService.getBalance(userId, baseCurrencyCode);
+
+        return toResponse(trade, symbol, side, currentBaseBalance);
     }
 
     @Transactional(readOnly = true)
-    public List<TradeResponseDto> getTradeHistory(Long userId) {
-        return tradeRepository.findByUserIdOrderByCtlCreTsDesc(userId).stream()
-                .map(trade -> toResponse(
-                        trade,
+    public GenericPage<TradeHistoryDto> getTradeHistory(Long userId, TradeHistoryFilterDto filter) {
+        Page<TradeEntity> page = tradeRepository.findByUserIdOrderByCtlCreTsDesc(userId, filter.toPageableOrDefault());
+        var data = page.getContent().stream()
+                .map(trade -> new TradeHistoryDto(
+                        trade.getId(),
                         trade.getTradingPair().getSymbol(),
-                        trade.getOrderSide().getCode()))
+                        trade.getOrderSide().getCode(),
+                        trade.getPrice(),
+                        trade.getQuantity(),
+                        trade.getCost(),
+                        trade.getCtlCreTs()
+                ))
                 .toList();
+        return new GenericPage<>(
+                data,
+                page.getTotalElements(),
+                page.getNumber(),
+                page.getSize()
+        );
     }
 
     private void validatePriceFreshness(AggregatedPriceEntity price, String symbol) {
-        long ageSeconds = ChronoUnit.SECONDS.between(price.getUpdatedAt(), LocalDateTime.now());
+        LocalDateTime lastChecked = price.getLastCheckedAt() != null
+                ? price.getLastCheckedAt()
+                : price.getCtlCreTs();
+        if (lastChecked == null) {
+            throw new PriceUnavailableException("Price for " + symbol + " has no timestamp");
+        }
+        long ageSeconds = ChronoUnit.SECONDS.between(lastChecked, LocalDateTime.now());
+        if (ageSeconds < 0) {
+            ageSeconds = 0; // clock skew
+        }
         if (ageSeconds > MAX_PRICE_AGE_SECONDS) {
             throw new PriceUnavailableException(
-                    "Price for " + symbol + " is stale (last updated " + ageSeconds + "s ago)");
+                    "Price for " + symbol + " is stale (last checked " + ageSeconds + "s ago)");
         }
     }
 
-    private TradeResponseDto toResponse(TradeEntity trade, String symbol, String side) {
+    private TradeResponseDto toResponse(TradeEntity trade, String symbol, OrderSideCodeEnum side, BigDecimal currentBalance) {
         return new TradeResponseDto(
                 trade.getId(),
                 symbol,
@@ -100,7 +127,8 @@ public class TradeService {
                 trade.getPrice(),
                 trade.getQuantity(),
                 trade.getCost(),
-                trade.getCreatedAt()
+                currentBalance,
+                trade.getCtlCreTs()
         );
     }
 }
