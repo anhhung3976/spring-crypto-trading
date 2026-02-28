@@ -1,0 +1,336 @@
+{
+  "info": {
+    "_postman_id": "crypto-trading-api-full-tests",
+    "name": "Crypto Trading API - Full Scenario Tests",
+    "description": "Covers prices, trading (BUY/SELL), wallet balances, trade history (paginated), and error cases.\n\n**Setup:**\n- App running on {{baseUrl}} (default http://localhost:8080)\n- H2 in-memory DB with demo user (id=1) and 50,000 USDT\n- Scheduler aggregating prices every 10s (or disable for tests)\n\n**Trade History:** Returns `GenericPage` with `data`, `totalCount`, `pageNumber`, `pageSize`.\nUse `?pageNumber=0&pageSize=10` for pagination.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Prices",
+      "item": [
+        {
+          "name": "Get Latest Aggregated Prices",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/prices", "host": ["{{baseUrl}}"], "path": ["api", "prices"]}
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                "pm.test('Response is array', () => {",
+                "  const json = pm.response.json();",
+                "  pm.expect(json).to.be.an('array');",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Wallets",
+      "item": [
+        {
+          "name": "Get Wallet Balances",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/wallets", "host": ["{{baseUrl}}"], "path": ["api", "wallets"]}
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                "pm.test('Contains USDT balance', () => {",
+                "  const json = pm.response.json();",
+                "  pm.expect(json).to.be.an('array');",
+                "  const usdt = json.find(w => w.currency === 'USDT');",
+                "  pm.expect(usdt).to.exist;",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Trades - Happy Path",
+      "item": [
+        {
+          "name": "Buy BTCUSDT (0.1 BTC)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"BTCUSDT\",\n  \"side\": \"BUY\",\n  \"quantity\": 0.1\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/api/trades", "host": ["{{baseUrl}}"], "path": ["api", "trades"]}
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                "pm.test('Response has BTCUSDT BUY', () => {",
+                "  const json = pm.response.json();",
+                "  pm.expect(json.symbol).to.eql('BTCUSDT');",
+                "  pm.expect(json.side).to.eql('BUY');",
+                "  pm.expect(json.currentBalance).to.exist;",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Buy ETHUSDT (1 ETH)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"ETHUSDT\",\n  \"side\": \"BUY\",\n  \"quantity\": 1\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/api/trades", "host": ["{{baseUrl}}"], "path": ["api", "trades"]}
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                "pm.expect(pm.response.json().symbol).to.eql('ETHUSDT');"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Sell BTCUSDT (0.05 BTC)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"BTCUSDT\",\n  \"side\": \"SELL\",\n  \"quantity\": 0.05\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/api/trades", "host": ["{{baseUrl}}"], "path": ["api", "trades"]}
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 201 or 400', () => pm.expect([201, 400]).to.include(pm.response.code));"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Get Trade History (default pagination)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/trades", "host": ["{{baseUrl}}"], "path": ["api", "trades"]}
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                "pm.test('Has GenericPage structure', () => {",
+                "  const json = pm.response.json();",
+                "  pm.expect(json).to.have.property('data');",
+                "  pm.expect(json).to.have.property('totalCount');",
+                "  pm.expect(json).to.have.property('pageNumber');",
+                "  pm.expect(json).to.have.property('pageSize');",
+                "  pm.expect(json.data).to.be.an('array');",
+                "});"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Get Trade History (page 0, size 10)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {
+              "raw": "{{baseUrl}}/api/trades?pageNumber=0&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "trades"],
+              "query": [
+                {"key": "pageNumber", "value": "0"},
+                {"key": "pageSize", "value": "10"}
+              ]
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                "pm.test('pageSize is 10', () => pm.expect(pm.response.json().pageSize).to.eql(10));"
+              ],
+              "type": "text/javascript"
+            }
+          }]
+        }
+      ]
+    },
+    {
+      "name": "Trades - Error Cases",
+      "item": [
+        {
+          "name": "Invalid Symbol (DOGEUSDT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"DOGEUSDT\",\n  \"side\": \"BUY\",\n  \"quantity\": 100\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/api/trades", "host": ["{{baseUrl}}"], "path": ["api", "trades"]}
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": ["pm.test('Status is 400', () => pm.response.to.have.status(400));"],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Invalid Side (HOLD)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"BTCUSDT\",\n  \"side\": \"HOLD\",\n  \"quantity\": 0.1\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/api/trades", "host": ["{{baseUrl}}"], "path": ["api", "trades"]}
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": ["pm.test('Status is 400', () => pm.response.to.have.status(400));"],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Insufficient Balance (Sell 100 BTC)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"BTCUSDT\",\n  \"side\": \"SELL\",\n  \"quantity\": 100\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/api/trades", "host": ["{{baseUrl}}"], "path": ["api", "trades"]}
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": ["pm.test('Status is 400', () => pm.response.to.have.status(400));"],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Validation Error (Negative Quantity)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbol\": \"BTCUSDT\",\n  \"side\": \"BUY\",\n  \"quantity\": -1\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/api/trades", "host": ["{{baseUrl}}"], "path": ["api", "trades"]}
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": ["pm.test('Status is 400', () => pm.response.to.have.status(400));"],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Validation Error (Missing Symbol)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"side\": \"BUY\",\n  \"quantity\": 1\n}"
+            },
+            "url": {"raw": "{{baseUrl}}/api/trades", "host": ["{{baseUrl}}"], "path": ["api", "trades"]}
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": ["pm.test('Status is 400', () => pm.response.to.have.status(400));"],
+              "type": "text/javascript"
+            }
+          }]
+        },
+        {
+          "name": "Validation Error (Empty Body)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Accept", "value": "application/json"}
+            ],
+            "body": {"mode": "raw", "raw": "{}"},
+            "url": {"raw": "{{baseUrl}}/api/trades", "host": ["{{baseUrl}}"], "path": ["api", "trades"]}
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": ["pm.test('Status is 400', () => pm.response.to.have.status(400));"],
+              "type": "text/javascript"
+            }
+          }]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8080"}
+  ]
+}

@@ -43,6 +43,9 @@ public class AggregatedPriceEntity extends BaseEntity {
     @Column(length = 20)
     private String askExchange;
 
+    @Column(name = "last_checked_at")
+    private LocalDateTime lastCheckedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trading_pair_id", nullable = false, unique = true)
     private TradingPairEntity tradingPair;
@@ -56,7 +59,4 @@ public class AggregatedPriceEntity extends BaseEntity {
         this.askExchange = askExchange;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return getCtlModTs() != null ? getCtlModTs() : getCtlCreTs();
-    }
 }

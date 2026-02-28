@@ -2,7 +2,6 @@ package com.example.cryptotrading.service;
 
 import com.example.cryptotrading.dto.TradeRequestDto;
 import com.example.cryptotrading.dto.TradeResponseDto;
-import com.example.cryptotrading.entity.AggregatedPriceEntity;
 import com.example.cryptotrading.exception.InsufficientBalanceException;
 import com.example.cryptotrading.exception.PriceUnavailableException;
 import com.example.cryptotrading.repository.OrderSideRepository;
@@ -126,9 +125,9 @@ class TradeServiceTest {
     @Test
     void executeTrade_invalidSide_throwsException() {
         mockBtcPair();
-        when(orderSideRepository.findByCode("HOLD")).thenReturn(Optional.empty());
+        when(orderSideRepository.findByCode(BUY)).thenReturn(Optional.empty());
 
-        TradeRequestDto request = new TradeRequestDto(BTCUSDT, "HOLD", new BigDecimal("1"));
+        TradeRequestDto request = new TradeRequestDto(BTCUSDT, BUY, new BigDecimal("1"));
 
         assertThrows(IllegalArgumentException.class,
                 () -> tradeService.executeTrade(DEFAULT_USER_ID, request));
